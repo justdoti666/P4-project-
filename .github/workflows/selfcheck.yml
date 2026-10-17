@@ -1,0 +1,59 @@
+name: 自检闸门
+
+# 触发：push / PR 到 main 都跑；任一红项都会让 PR 无法合并（配合分支保护使用）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 只读权限：CI 只做验证，不需要写回仓库。
+permissions:
+  contents: read
+
+# 同一分支的旧任务自动取消，省 runner 时间。
+concurrency:
+  group: selfcheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selfcheck:
+    name: Python 3.12 · 10 项自检 + 判别力演示
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # CI 是纯命令行环境：装 Tk 运行库 + xvfb 虚拟显示，
+      # 让「站名零重叠 / 动画一致 / 导出 PNG」等 GUI 检查也能真实跑起来。
+      - name: 安装 Tk 运行库与虚拟显示
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk xvfb
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pillow
+
+      - name: 检查 Tk 与 Pillow
+        run: |
+          python -c "import tkinter; print('Tk', tkinter.TkVersion)"
+          python -c "from PIL import Image; print('Pillow', Image.__version__)"
+
+      # CI 没有显示器：--no-gui 会跳过第 10 项 GUI 检查（前 9 项照常跑），
+      # 失败时日志里能直接看到 [FAIL] 的红项和 detail。
+      - name: 10 项自检（无显示环境，跳过第 10 项 GUI）
+        run: python main.py --check --no-gui
+
+      # 判别力演示：把 y 翻转 / Dijkstra 耗时 / 站名排版故意改坏，
+      # 对应检查必须变红（3 个 [CAUGHT]）。GUI 项放在虚拟显示下跑。
+      - name: 判别力演示（改坏实现必须变红）
+        run: xvfb-run -a python selfcheck.py --mutation-demo

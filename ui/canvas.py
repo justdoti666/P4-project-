@@ -2059,8 +2059,13 @@ class CanvasView(tk.Canvas):
         self._anim_paused = False
         self._current_path = self._anim_view
         self._anim_view = None
-        self.delete("anim")
-        self._redraw()
+        try:
+            self.delete("anim")
+            self._redraw()
+        except tk.TclError:
+            # 宿主窗口可能在最后一帧前被销毁（如用户直接关窗），此时画布
+            # 的 Tcl 命令已不存在；动画收尾不应把异常抛给调用方。
+            pass
         for callback in list(self._animation_end_callbacks):
             try:
                 callback()

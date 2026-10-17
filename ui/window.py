@@ -559,9 +559,12 @@ class MetroNavWindow(tk.Tk):
             raise RuntimeError(
                 f"动画与立即结果不一致：{anim_metrics} != {static_metrics}"
             )
-        self.update()
+        # “动画是否启动”必须在跑事件循环之前判断：update() 在慢机器或首次
+        # 绘制较慢时可能一口气把定时器全部处理完，动画会自然播完，此时再查
+        # is_animating 就会误报。下面 skip_animation() 对“已经播完”是幂等的。
         if not self.canvas.is_animating:
             raise RuntimeError("动画没有启动")
+        self.update()
         self.canvas.skip_animation()
         self.update()
         if self.canvas.is_animating:

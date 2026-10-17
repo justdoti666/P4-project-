@@ -1,0 +1,42 @@
+# Git 属性：统一换行与二进制标记
+# 说明见 https://git-scm.com/docs/gitattributes
+#
+# 文本文件：入库统一 LF，检出时由各平台决定（本仓库统一 LF，Windows 编辑器请设默认 LF）
+* text=auto eol=lf
+
+# 代码与配置（强制 LF）
+*.py      text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.json    text eol=lf
+*.txt     text eol=lf
+*.csv     text eol=lf
+*.html    text eol=lf
+*.css     text eol=lf
+*.js      text eol=lf
+*.sh      text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.editorconfig   text eol=lf
+requirements.txt text eol=lf
+
+# Windows 脚本保持 CRLF（双击 / powershell -File 更稳）
+*.ps1     text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# 二进制文件：不做换行转换、不做文本 diff
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.docx    binary
+*.doc     binary
+*.pdf     binary
+*.ps      binary
+*.eps     binary
+*.zip     binary
+*.mp4     binary
+*.pyc     binary

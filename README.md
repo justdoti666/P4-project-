@@ -13,11 +13,16 @@
 ui/canvas.py          P4 核心：坐标变换 / 缩放拖拽 / 路径高亮 / 动画 / 导出（约 2000 行，含大量中文注释）
 ui/window.py          最小可运行窗口（P3 接口替身，只调用画布公开方法）
 selfcheck.py          10 项自检矩阵 + “改坏实现会变红”的判别力演示
+CONTRIBUTING.md       协作规范：分支命名 / 提交信息 / 文件所有权 / PR / 审查 / 合并
+.github/              CI 自检闸门、PR/Issue 模板、CODEOWNERS
 tools/export_canvas.py 画布导出 PNG/PS + 报告插图一键生成
 tools/bench.py        5 对起终点 × 3 算法对比实验 + 图 4-4
 tools/record_demo.py  自动驱动真实窗口，录制演示 GIF（有 ffmpeg 时可转 MP4）
+tools/prepare_github.py 仓库体检 / 待上传清单 / zip 打包 / PR 描述生成
+tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
 data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
-docs/                 验收说明、报告草稿、统稿模板、演示 GIF、bench.csv、插图
+docs/                 验收说明、GitHub 协作指南、报告素材、演示 GIF、bench.csv、插图
+reports/              五章实验报告终稿 docx
 ```
 
 最短验证命令（在项目根目录执行）：
@@ -27,6 +32,7 @@ python main.py --check                         # 10 项自检，退出码 0/1
 python main.py --smoke _smoke/demo.ps          # 界面冒烟 + 导出画布
 python tools/export_canvas.py docs/figures/my_route.png --demo
 python tools/record_demo.py                    # 自动录制演示 GIF
+python tools/prepare_github.py --check         # 仓库体检：协作文件 / CI / 禁止入库项
 ```
 
 本机实测（Windows 11、Python 3.12.14、Tk 8.6、Pillow 12.3.0）：
@@ -54,7 +60,7 @@ python tools/record_demo.py                    # 自动录制演示 GIF
 | 中文字体 | 微软雅黑 / 黑体 | 没有时自动回退系统字体，不影响功能 |
 
 ```powershell
-cd metro_p4
+cd metro-p4
 python --version                # 确认 3.10+
 pip install pillow              # 只有导出 PNG 才需要
 python main.py --check          # 第一道闸门：必须 10/10 绿
@@ -88,9 +94,13 @@ python tools/record_demo.py                    # 录演示 GIF（窗口会置顶
 ## 2. 目录结构
 
 ```text
-metro_p4/
+metro-p4/
 ├─ main.py                    # 入口：GUI / --check / --smoke
 ├─ selfcheck.py               # 10 项自检 + 判别力演示
+├─ CONTRIBUTING.md            # 协作规范：分支/提交/所有权/PR/审查/合并
+├─ .github/                   # CI 自检、PR/Issue 模板、CODEOWNERS
+├─ .gitattributes             # 换行统一（文本 LF、ps1/bat CRLF、二进制标记）
+├─ .editorconfig              # 编辑器风格（UTF-8/LF、py 4 空格、yml/md 2 空格）
 ├─ ui/
 │  ├─ canvas.py               # ★ P4 核心：CanvasView
 │  ├─ window.py               # P3 接口替身（最小窗口）
@@ -102,7 +112,12 @@ metro_p4/
 ├─ tools/
 │  ├─ export_canvas.py        # 画布 → PNG/PS
 │  ├─ bench.py                # 对比实验 + 图 4-4
-│  └─ record_demo.py          # 自动录演示 GIF / 可选 MP4
+│  ├─ record_demo.py          # 自动录演示 GIF / 可选 MP4
+│  ├─ prepare_github.py       # 仓库体检 / manifest / zip 打包 / PR 描述
+│  ├─ make_report.py          # 五章报告 docx 生成
+│  ├─ check_report.py         # 报告统稿检查（退出码闸门）
+│  ├─ make_report_assets.py   # 报告架构图等插图
+│  └─ report_common.py        # 报告排版公共函数（被上面脚本复用）
 ├─ data/
 │  ├─ beijing_metro.json/.txt # 134 站 / 7 条线（实测主数据）
 │  ├─ demo_city.json          # 10 站 / 3 条线（站名避让自检）
@@ -110,15 +125,19 @@ metro_p4/
 │  └─ disconnected_4.json     # 两个不连通分量
 ├─ docs/
 │  ├─ P4-验收与交接.md        # 5 条验收逐项证据
-│  ├─ P4-报告章节草稿.md      # 4.5–4.7 + 第 5 章
+│  ├─ GitHub协作与上传指南.md # 建仓 / 保护 main / 邀请组员 / PR / tag / FAQ
+│  ├─ P4-报告章节草稿.md      # 4.5–4.7 + 第 5 章素材（终稿已并入 reports/）
 │  ├─ P4-报告统稿模板与检查表.md # 五章合并、图表编号、术语统一
+│  ├─ P4-报告终稿说明.md      # 报告如何重新生成 / 检查
 │  ├─ P4-演示录屏脚本.md      # 2 分钟录屏分镜
 │  ├─ P4-演示动画.gif         # 自动录制的真实界面演示
 │  ├─ bench.csv / bench.md    # 对比实验原始数据
-│  └─ figures/                # 报告插图
+│  └─ figures/                # 报告插图（report/ 为报告专用插图）
+├─ reports/
+│  └─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿
 ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
 ├─ run.ps1 / run.bat          # 启动脚本
-└─ _smoke/                    # 冒烟测试输出（可删）
+└─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
 ```
 
 ---
@@ -255,7 +274,8 @@ python selfcheck.py --mutation-demo # 证明断言不是恒真
 ```text
 [PASS] 10. 界面：站名零重叠 + 动画一致 + 命中 + 导出  (界面, 1658 ms)
         AST：无 core 导入、无 open()/solve()/load_dataset()；10 站名零重叠；
-        5 段标注零重叠；动画/立即一致；北京 117 站名零重叠（省略 17 个）；
+        5 段标注零重叠；动画/立即一致；北京 117 站名零重叠（省略 17 个；
+        自检画布 1200×735，报告图 4-2 按 1400×900 统计为 121/13）；
         命中误差 11.0px；PNG 39KB
 结论：10 通过 / 0 失败 / 0 跳过，共 10 项，用时 1643 ms
 闸门：绿（退出码 0）。
@@ -396,10 +416,76 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 
 ## 11. 文档索引
 
+### 11.1 协作与工程化
+
+* [`CONTRIBUTING.md`](CONTRIBUTING.md) —— 分支命名、提交信息、文件所有权、自检闸门、PR/review/合并规范
+* [`docs/GitHub协作与上传指南.md`](docs/GitHub协作与上传指南.md) —— 建仓、首次 push、保护 main、邀请组员、tag/Release、FAQ
+* [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml) —— GitHub Actions 自检闸门
+* [`tools/prepare_github.py`](tools/prepare_github.py) —— 仓库体检 / manifest / zip 打包 / PR 描述生成
+
+### 11.2 验收与报告
+
 * [`docs/P4-验收与交接.md`](docs/P4-验收与交接.md) —— 5 条验收逐项证据、接口交接、限制
-* [`docs/P4-报告章节草稿.md`](docs/P4-报告章节草稿.md) —— 第 4.5–4.7 节 + 第 5 章
+* [`reports/城市交通路径导航系统_实验报告.docx`](reports/城市交通路径导航系统_实验报告.docx) —— **五章实验报告终稿**（提交以此为准）
+* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— PDF 预览（目录页为 Word 域，正式 PDF 请用 Word 打开 docx 后“更新域”再导出）
+* [`docs/P4-报告终稿说明.md`](docs/P4-报告终稿说明.md) —— 报告如何重新生成 / 检查、本版改动清单
+* [`tools/make_report.py`](tools/make_report.py) —— 报告生成器（`python tools/make_report.py`）
+* [`tools/check_report.py`](tools/check_report.py) —— 报告统稿检查器（退出码 0/1）
+* [`docs/P4-报告章节草稿.md`](docs/P4-报告章节草稿.md) —— 第 4.5–4.7 节 + 第 5 章素材（已并入终稿）
+* [`docs/P4-报告统稿模板与检查表.md`](docs/P4-报告统稿模板与检查表.md) —— 五章合并、图表编号、术语检查
+
+### 11.3 演示与实验数据
+
 * [`docs/P4-演示录屏脚本.md`](docs/P4-演示录屏脚本.md) —— 2 分钟录屏分镜与旁白
 * [`docs/P4-演示动画.gif`](docs/P4-演示动画.gif) —— 自动录制的真实界面演示（23 帧）
-* [`docs/P4-报告统稿模板与检查表.md`](docs/P4-报告统稿模板与检查表.md) —— 五章合并、图表编号、术语检查
-* [`docs/bench.md`](docs/bench.md) —— 对比实验原始表
-* [`docs/figures/`](docs/figures/) —— 报告插图
+* [`docs/bench.md`](docs/bench.md) / [`docs/bench.csv`](docs/bench.csv) —— 对比实验原始表与数据
+* [`docs/figures/`](docs/figures/) —— 报告插图（`report/` 下为报告专用插图）
+
+---
+
+## 12. GitHub 协作与上传
+
+### 12.1 CI 徽章（占位，首次 push 后生效）
+
+仓库建好后，把下面 URL 里的 `YOUR-GITHUB-NAME` 换成实际 GitHub 用户名/组织名，徽章会自动显示最新一次 CI 结果：
+
+[![自检闸门](https://github.com/YOUR-GITHUB-NAME/metro-p4/actions/workflows/selfcheck.yml/badge.svg)](https://github.com/YOUR-GITHUB-NAME/metro-p4/actions/workflows/selfcheck.yml)
+
+CI 配置见 [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml)，
+在 `ubuntu-latest + Python 3.12` 上跑两道闸门：
+
+* `python main.py --check --no-gui` —— 无显示环境跳过第 10 项 GUI，前 9 项必须全绿；
+* `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`。
+
+push / PR 到 `main` 自动触发；失败时 Actions 日志里能直接看到 `[FAIL]` 红项与 detail。
+
+### 12.2 `prepare_github.py` 常用命令
+
+```powershell
+python tools/prepare_github.py --check      # 仓库体检（默认命令）：必需文件 / 禁止入库 / 大文件 / 本机路径 / CI
+python tools/prepare_github.py --stats      # 代码行数排行、文档/图片统计、自检是否可跑
+python tools/prepare_github.py --manifest   # dist/manifest.json：待上传文件路径/大小/SHA-256
+python tools/prepare_github.py --bundle     # dist/metro-p4-github-<日期>.zip（含未提交新文件，回读校验）
+python tools/prepare_github.py --pr-body    # dist/PR_BODY.md：改动摘要 / 自检结果 / 审查要点 / 截图链接
+python tools/prepare_github.py --all        # check + manifest + bundle + pr-body
+```
+
+首次上传（管理员执行一次；会改 remote 的命令默认不自动跑）：
+
+```powershell
+python tools/prepare_github.py --check --strict
+python tools/prepare_github.py --remote https://github.com/YOUR-GITHUB-NAME/metro-p4.git
+python tools/prepare_github.py --push
+```
+
+### 12.3 最小协作流程
+
+```text
+Issue（任务卡）→ 分支 feat/p1-data 等 → 本地自检
+  → push → 开 PR（模板自动带出）→ CI 绿 → 至少 1 人 review → Squash merge
+```
+
+* 分支命名、提交信息、文件所有权、合并前闸门：[`CONTRIBUTING.md`](CONTRIBUTING.md)
+* 建仓、保护 `main`、邀请组员、打 `v1.0.0` tag、常见问题：[`docs/GitHub协作与上传指南.md`](docs/GitHub协作与上传指南.md)
+* 装好 remote 后，`python tools/prepare_github.py --pr-body` 可以直接生成 PR 描述。
+

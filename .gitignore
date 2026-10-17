@@ -10,3 +10,34 @@ venv/
 .vscode/
 .idea/
 *.log
+
+# 上传/打包产物（tools/prepare_github.py 生成）
+dist/
+*.zip
+
+# 本地验证目录（独立验收 / 临时复跑日志，不提交）
+_verify/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# 报告生成过程的临时图（_tmp 前缀，最终图放到 docs/figures/）
+docs/figures/_tmp*
+
+# 报告预览/渲染的临时文件（下划线开头，如 reports/_preview.pdf）
+reports/_*
+
+# DSH 工具（报告 docx → PDF/图片预览）的缓存目录，里面是渲染出的页面 PNG
+.dsh-office-*/
+.dsh-*/
+
+# 系统/Office 杂项
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+*.tmp
+*.bak

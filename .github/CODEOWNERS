@@ -1,0 +1,52 @@
+# CODEOWNERS —— 按文件所有权自动指定 reviewer
+# 文档：https://docs.github.com/zh/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# 现状：组员的 GitHub 用户名还没确定，所以下面的规则**全部先用注释占位**，
+# 等账号确定后按下面的 3 步替换，GitHub 才会自动把对应 reviewer 拉进 PR。
+#
+# 替换方法（30 秒）：
+#   1) 把每个 @p?-owner 换成真实 GitHub 用户名（可以带 "-" 但不能有空格）；
+#   2) 删掉规则行开头的 "# "（注意保留一行一个规则）；
+#   3) 提交一个 PR（标题如 "chore: 启用 CODEOWNERS"），合并后对该目录的 PR 生效。
+#      如果某个用户名写错，GitHub 会在仓库设置页给出提示，那一行规则会被忽略，不影响其他行。
+#
+# 已知账号后也可以只启用部分规则（用不到的规则保持注释即可）。
+#
+# 建议的账号占位对照：
+#   P1 数据层：core/loader.py、core/graph.py、data/          -> @p1-data-owner
+#   P2 算法层：core/algorithms.py                            -> @p2-algo-owner
+#   P3 界面层：ui/window.py                                  -> @p3-ui-owner
+#   P4 渲染与工程化：ui/canvas.py、selfcheck.py、tools/、README.md、docs/ -> @p4-render-owner
+#   公共/仓库管理员：main.py、.github/、CONTRIBUTING.md      -> @team-lead
+#   兜底（没人认领的文件）：                                  -> @team-lead
+
+# ---- P1 数据层（core 的数据结构与数据文件） ----
+# /core/loader.py      @p1-data-owner
+# /core/graph.py       @p1-data-owner
+# /data/               @p1-data-owner
+
+# ---- P2 算法层 ----
+# /core/algorithms.py  @p2-algo-owner
+
+# ---- P3 界面层 ----
+# /ui/window.py        @p3-ui-owner
+
+# ---- P4 渲染与工程化 ----
+# /ui/canvas.py        @p4-render-owner
+# /ui/dpi.py           @p4-render-owner
+# /selfcheck.py        @p4-render-owner
+# /tools/              @p4-render-owner
+# /README.md           @p4-render-owner
+# /docs/               @p4-render-owner
+# /reports/            @p4-render-owner
+
+# ---- 公共文件：改动必须管理员 + 对应 owner 一起 review ----
+# /main.py             @team-lead
+# /CONTRIBUTING.md     @team-lead
+# /.github/            @team-lead
+# /requirements.txt    @team-lead
+# /run.ps1             @team-lead
+# /run.bat             @team-lead
+
+# ---- 兜底：上面没覆盖到的文件都交给管理员 ----
+# /*                   @team-lead

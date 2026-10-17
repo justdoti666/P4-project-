@@ -1,0 +1,39 @@
+# EditorConfig：让不同编辑器（VS Code / PyCharm / Notepad++）保持同一套风格
+# 说明见 https://editorconfig.org/
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python：4 空格
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# Markdown / YAML / JSON / 配置：2 空格
+[*.{yml,yaml}]
+indent_size = 2
+[*.{md,markdown}]
+indent_size = 2
+trim_trailing_whitespace = false
+[*.{json,csv}]
+indent_size = 2
+
+# Windows 启动脚本：CRLF
+[*.{ps1,bat,cmd}]
+end_of_line = crlf
+indent_size = 4
+
+# 二进制/生成物：不参与格式检查
+[*.{png,jpg,jpeg,gif,ps,docx,pdf,zip}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
