@@ -22,7 +22,7 @@ tools/prepare_github.py 仓库体检 / 待上传清单 / zip 打包 / PR 描述�
 tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
 data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
 docs/                 验收说明、GitHub 协作指南、报告素材、演示 GIF、bench.csv、插图
-reports/              五章实验报告终稿 docx
+reports/              五章实验报告终稿 docx + PDF（目录已更新，可直接提交）
 ```
 
 最短验证命令（在项目根目录执行）：
@@ -134,7 +134,8 @@ metro-p4/
 │  ├─ bench.csv / bench.md    # 对比实验原始数据
 │  └─ figures/                # 报告插图（report/ 为报告专用插图）
 ├─ reports/
-│  └─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿
+│  ├─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿（源文件，可用脚本重新生成）
+│  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（34 页，目录已更新，可直接提交）
 ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
 ├─ run.ps1 / run.bat          # 启动脚本
 └─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
@@ -274,12 +275,14 @@ python selfcheck.py --mutation-demo # 证明断言不是恒真
 ```text
 [PASS] 10. 界面：站名零重叠 + 动画一致 + 命中 + 导出  (界面, 1658 ms)
         AST：无 core 导入、无 open()/solve()/load_dataset()；10 站名零重叠；
-        5 段标注零重叠；动画/立即一致；北京 117 站名零重叠（省略 17 个；
-        自检画布 1200×735，报告图 4-2 按 1400×900 统计为 121/13）；
+        5 段标注零重叠；动画/立即一致；北京 117 站名零重叠（省略 17 个）；
         命中误差 11.0px；PNG 39KB
 结论：10 通过 / 0 失败 / 0 跳过，共 10 项，用时 1643 ms
 闸门：绿（退出码 0）。
 ```
+
+> 说明：上面的 117/17 是自检内部画布尺寸下的统计；报告图 4-2 用 1400×900 导出，
+> 口径为 121 个站名、省略 13 个。两者只是画布尺寸不同，不是数据差异。
 
 ### 判别力：把实现改坏会发生什么
 
@@ -426,8 +429,8 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 ### 11.2 验收与报告
 
 * [`docs/P4-验收与交接.md`](docs/P4-验收与交接.md) —— 5 条验收逐项证据、接口交接、限制
-* [`reports/城市交通路径导航系统_实验报告.docx`](reports/城市交通路径导航系统_实验报告.docx) —— **五章实验报告终稿**（提交以此为准）
-* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— PDF 预览（目录页为 Word 域，正式 PDF 请用 Word 打开 docx 后“更新域”再导出）
+* [`reports/城市交通路径导航系统_实验报告.docx`](reports/城市交通路径导航系统_实验报告.docx) —— **五章实验报告终稿源文件**（`python tools/make_report.py` 可重新生成）
+* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— **终稿 PDF**（34 页，目录页码已更新，可直接提交；docx 为可再生成源）
 * [`docs/P4-报告终稿说明.md`](docs/P4-报告终稿说明.md) —— 报告如何重新生成 / 检查、本版改动清单
 * [`tools/make_report.py`](tools/make_report.py) —— 报告生成器（`python tools/make_report.py`）
 * [`tools/check_report.py`](tools/check_report.py) —— 报告统稿检查器（退出码 0/1）

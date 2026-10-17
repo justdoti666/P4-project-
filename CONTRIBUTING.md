@@ -50,7 +50,7 @@ python main.py --check          # 第一次就要看到 10/10 绿
 ```powershell
 git config --global user.name "你的名字"
 git config --global user.email "你的邮箱"
-git config --global core.autocrlf false     # 本仓库用 .gitattributes 统一换行
+# 换行由仓库 .gitattributes 统一为 LF，一般不需要改 core.autocrlf（遇到 CRLF 警告见 §10）
 ```
 
 ### 1.2 先读这三份
