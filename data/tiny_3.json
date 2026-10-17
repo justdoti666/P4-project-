@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "city": "三站手工验证图",
+    "version": "1.0",
+    "description": "用于报告表 4-2 的手工推导：三站一线，两段各 1.2 km。",
+    "params": {
+      "train_speed_kmh": 35.0,
+      "dwell_minutes": 0.6,
+      "transfer_minutes": 4.0
+    }
+  },
+  "stations": [
+    {"id": "T1", "name": "甲站", "x": 0.0, "y": 0.0},
+    {"id": "T2", "name": "乙站", "x": 1.2, "y": 0.0},
+    {"id": "T3", "name": "丙站", "x": 2.4, "y": 0.0}
+  ],
+  "lines": [
+    {
+      "id": "L1",
+      "name": "示例线",
+      "color": "#0EA5E9",
+      "loop": false,
+      "stations": ["T1", "T2", "T3"]
+    }
+  ]
+}

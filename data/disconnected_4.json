@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "city": "不连通示例图",
+    "version": "1.0",
+    "description": "两条互不相连的线路，用于验证“无路径”边界情况。",
+    "params": {
+      "train_speed_kmh": 35.0,
+      "dwell_minutes": 0.6,
+      "transfer_minutes": 4.0
+    }
+  },
+  "stations": [
+    {"id": "D1", "name": "甲城北", "x": 0.0, "y": 0.0},
+    {"id": "D2", "name": "甲城南", "x": 1.0, "y": 0.0},
+    {"id": "D3", "name": "乙城西", "x": 0.0, "y": 2.0},
+    {"id": "D4", "name": "乙城东", "x": 1.0, "y": 2.0}
+  ],
+  "lines": [
+    {
+      "id": "L1",
+      "name": "甲城线",
+      "color": "#0EA5E9",
+      "loop": false,
+      "stations": ["D1", "D2"]
+    },
+    {
+      "id": "L2",
+      "name": "乙城线",
+      "color": "#8B5CF6",
+      "loop": false,
+      "stations": ["D3", "D4"]
+    }
+  ]
+}
