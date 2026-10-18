@@ -1,0 +1,18 @@
+{
+  "base": "06e182a",
+  "head": "b641db7",
+  "files": [
+    {
+      "path": "reports/城市交通路径导航系统_实验报告.docx",
+      "size": 1005951,
+      "sha256_at_head": "511ddcd8e961847629b0fc41a4e7b44cede9b3ba649dde4f4d6aac52665dc1e4",
+      "note": "二进制文件未包含在文本补丁中；在仓库内执行 `git checkout b641db7 -- reports/城市交通路径导航系统_实验报告.docx` 即可获得"
+    },
+    {
+      "path": "reports/城市交通路径导航系统_实验报告.pdf",
+      "size": 1270184,
+      "sha256_at_head": "6890a02222ab5d4db72e51752e9d9903fac1a466f9eef76c694ecbc59f8d1266",
+      "note": "二进制文件未包含在文本补丁中；在仓库内执行 `git checkout b641db7 -- reports/城市交通路径导航系统_实验报告.pdf` 即可获得"
+    }
+  ]
+}

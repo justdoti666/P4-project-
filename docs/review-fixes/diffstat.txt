@@ -1,0 +1,27 @@
+ CONTRIBUTING.md                            |   4 +-
+ README.md                                  |  24 +--
+ core/__init__.py                           |   4 +
+ core/algorithms.py                         | 161 +++++++++++++----
+ core/graph.py                              |  50 +++++-
+ core/loader.py                             |  23 ++-
+ docs/API接口说明.md                        |  29 ++--
+ docs/P4-报告章节草稿.md                    |   2 +-
+ docs/P4-报告终稿说明.md                    |  30 +++-
+ docs/P4-终稿验收记录.md                    |   3 +
+ docs/P4-验收与交接.md                      |  10 +-
+ docs/bench.md                              |   2 +-
+ docs/评审整改记录-2026-10-18.md            | 114 ++++++++++++
+ metro_api.py                               |  70 ++++++--
+ reports/城市交通路径导航系统_实验报告.docx | Bin 1004906 -> 1005951 bytes
+ reports/城市交通路径导航系统_实验报告.pdf  | Bin 1264865 -> 1270184 bytes
+ selfcheck.py                               |  18 +-
+ tests/__init__.py                          |   6 +
+ tests/test_api.py                          |  64 +++++++
+ tests/test_contracts.py                    | 269 +++++++++++++++++++++++++++++
+ tools/bench.py                             |  37 +++-
+ tools/make_report.py                       |  84 +++++----
+ tools/prepare_github.py                    |   4 +
+ tools/serve_api.py                         |  28 ++-
+ ui/canvas.py                               |  61 ++++++-
+ ui/window.py                               |   3 +-
+ 26 files changed, 948 insertions(+), 152 deletions(-)

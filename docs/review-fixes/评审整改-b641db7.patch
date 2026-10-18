@@ -1,0 +1,2177 @@
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+index cb51021..05f3c14 100644
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -16,7 +16,7 @@ git switch -c feat/p4-canvas               # 开自己的分支（命名见 §2
+ # ……改代码……
+ python main.py --check                     # 必须 10/10 绿
+ python selfcheck.py --mutation-demo        # 必须 3 个 [CAUGHT]
+-python -m unittest discover -s tests -v    # 接口回归：35 个用例必须全过
++python -m unittest discover -s tests -v    # 接口回归：55 个用例必须全过
+ git add -A
+ git commit -m "feat: 画布支持 4 倍速回放"
+ git push -u origin feat/p4-canvas          # 首次推这个分支
+@@ -168,7 +168,7 @@ python main.py --check --no-gui            # 跳过第 10 项 GUI，前 9 项必
+ 另外：
+ 
+ - 改了界面/画布/导出：附 1~2 张新截图到 PR（用 `python tools/export_canvas.py` 或 `python main.py --smoke _smoke/xx.png`）；
+-- 改了算法/数据：附 `python tools/bench.py` 复跑后的 `docs/bench.csv` 对比，报告数字要同步；
++- 改了算法/数据：用 `python tools/bench.py --update-docs` 复跑后再对比 `docs/bench.csv`，报告数字要同步；
+ - **不许**为了让闸门变绿而删除/放宽自检断言；发现断言本身错了，先开 Issue 说明理由，由 P4 修改并补 mutation 用例。
+ 
+ ---
+diff --git a/README.md b/README.md
+index a227773..0a21ac7 100644
+--- a/README.md
++++ b/README.md
+@@ -25,7 +25,7 @@ tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
+ data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
+ docs/                 验收说明、GitHub 协作指南、API 说明、报告素材、演示 GIF、bench.csv、插图
+ reports/              五章实验报告终稿 docx + PDF（目录已更新，可直接提交）
+-tests/test_api.py     可调用接口回归（35 个 unittest 用例）
++tests/test_api.py     可调用接口回归（55 个 unittest 用例）
+ ```
+ 
+ 最短验证命令（在项目根目录执行）：
+@@ -33,7 +33,7 @@ tests/test_api.py     可调用接口回归（35 个 unittest 用例）
+ ```powershell
+ python main.py --check                         # 10 项自检，退出码 0/1
+ python main.py --smoke _smoke/demo.ps          # 界面冒烟 + 导出画布
+-python -m unittest discover -s tests -v        # 可调用接口回归（35 用例）
++python -m unittest discover -s tests -v        # 可调用接口回归（55 用例）
+ python metro_api.py route --start 苹果园 --end 天通苑北 --json
+ python tools/export_canvas.py docs/figures/my_route.png --demo
+ python tools/record_demo.py                    # 自动录制演示 GIF
+@@ -49,7 +49,7 @@ python tools/prepare_github.py --check         # 仓库体检：协作文件 / C
+ | `python main.py --smoke _smoke/smoke.ps` | 加载→搜索→动画→跳过→导出成功 | 约 3.2 s |
+ | `python tools/export_canvas.py ...` | 1400×900 PNG 导出成功 | 约 3.0 s |
+ | `python tools/record_demo.py` | 自动录制 23 帧、1200×789 演示 GIF | 约 20 s |
+-| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 35 个用例全部通过 | 约 2.5 s |
++| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 55 个用例全部通过 | 约 2.5 s |
+ | `python metro_api.py route ... --json` | 返回 JSON：79.575 min / 换乘 1 次 | < 0.5 s |
+ | `python tools/serve_api.py --port 8765` | 9 个 HTTP 端点 + 404/400/CORS 冒烟通过 | 启动 < 1 s |
+ | 打开 GUI（含 134 站绘制） | 窗口出现并可交互 | 约 1.6 s |
+@@ -92,7 +92,7 @@ python main.py                  # 打开界面
+ python main.py --check --verbose               # 每项都打印细节
+ python main.py --smoke _smoke/a.png            # 自动选点、搜索、动画、导出
+ python tools/export_canvas.py _smoke/a.ps      # 只导出画布
+-python tools/bench.py                          # 生成 docs/bench.csv 和图 4-4
++python tools/bench.py --update-docs              # 更新 docs/bench.csv 和图 4-4（默认只写 _smoke/）
+ python tools/export_canvas.py --figure-pack    # 生成 docs/figures 整套插图
+ python tools/record_demo.py                    # 录演示 GIF（窗口会置顶约 15 秒）
+ ```
+@@ -146,9 +146,9 @@ metro-p4/
+ │  └─ figures/                # 报告插图（report/ 为报告专用插图）
+ ├─ reports/
+ │  ├─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿（源文件，可用脚本重新生成）
+-│  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（34 页，目录已更新，可直接提交）
++│  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（35 页，目录已更新，可直接提交）
+ ├─ tests/
+-│  └─ test_api.py             # 可调用接口回归（35 个用例：SDK/CLI/HTTP）
++│  └─ test_api.py             # 可调用接口回归（55 个用例：SDK/CLI/HTTP）
+ ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
+ ├─ run.ps1 / run.bat          # 启动脚本
+ └─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
+@@ -333,7 +333,7 @@ python selfcheck.py --mutation-demo # 证明断言不是恒真
+ ## 7. 对比实验与报告素材
+ 
+ ```powershell
+-python tools/bench.py                 # 写 docs/bench.csv、docs/bench.md、图 4-4
++python tools/bench.py --update-docs   # 写 docs/bench.csv、docs/bench.md、图 4-4
+ python tools/export_canvas.py --figure-pack
+ python tools/record_demo.py           # 录 docs/P4-演示动画.gif
+ ```
+@@ -444,7 +444,7 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理
+ 
+ * [`docs/P4-验收与交接.md`](docs/P4-验收与交接.md) —— 5 条验收逐项证据、接口交接、限制
+ * [`reports/城市交通路径导航系统_实验报告.docx`](reports/城市交通路径导航系统_实验报告.docx) —— **五章实验报告终稿源文件**（`python tools/make_report.py` 可重新生成）
+-* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— **终稿 PDF**（34 页，目录页码已更新，可直接提交；docx 为可再生成源）
++* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— **终稿 PDF**（35 页，目录页码已更新，可直接提交；docx 为可再生成源）
+ * [`docs/P4-报告终稿说明.md`](docs/P4-报告终稿说明.md) —— 报告如何重新生成 / 检查、本版改动清单
+ * [`tools/make_report.py`](tools/make_report.py) —— 报告生成器（`python tools/make_report.py`）
+ * [`tools/check_report.py`](tools/check_report.py) —— 报告统稿检查器（退出码 0/1）
+@@ -463,7 +463,7 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理
+ * [`docs/API接口说明.md`](docs/API接口说明.md) —— Python SDK / CLI / HTTP 三套调用的完整说明
+ * [`metro_api.py`](metro_api.py) —— `connect()` / `MetroNavigator` / 命令行入口
+ * [`tools/serve_api.py`](tools/serve_api.py) —— 本地 HTTP JSON 服务（零第三方依赖）
+-* [`tests/test_api.py`](tests/test_api.py) —— 35 个接口回归用例
++* [`tests/test_api.py`](tests/test_api.py) —— 55 个接口回归用例
+ 
+ ---
+ 
+@@ -480,7 +480,7 @@ CI 配置见 [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml
+ 
+ * `python main.py --check --no-gui` —— 无显示环境跳过第 10 项 GUI，前 9 项必须全绿；
+ * `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`；
+-* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）35 个用例。
++* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）55 个用例。
+ 
+ push / PR 到 `main` 自动触发；失败时 Actions 日志里能直接看到 `[FAIL]` 红项与 detail。
+ 
+@@ -527,15 +527,17 @@ from metro_api import connect
+ 
+ nav = connect()                                        # 默认 134 站北京路网
+ print(nav.route("苹果园", "天通苑北")["summary"])        # 79.575 min / 33.236 km / 换乘 1
++print(nav.route("S001", "S061", weight="distance")["summary"])  # 里程最短口径（多准则）
+ print(nav.compare("慈寿寺", "崇文门")["highlights"])     # 三算法差异摘要
+ ```
+ 
+ ```powershell
+ python metro_api.py route --start S001 --end S061 --json
++python metro_api.py route --start S001 --end S061 --weight distance --json
+ python metro_api.py compare --start S001 --end S061
+ python main.py --cli info                              # 等价入口
+ python tools/serve_api.py --port 8765                  # HTTP：GET /api/route?start=..&end=..
+-python -m unittest discover -s tests -v                # 35 个接口回归用例
++python -m unittest discover -s tests -v                # 55 个接口回归用例
+ ```
+ 
+ * 完整文档（方法 / JSON 结构 / 端点 / 错误码 / FAQ）：[`docs/API接口说明.md`](docs/API接口说明.md)
+diff --git a/core/__init__.py b/core/__init__.py
+index 4d47f51..c647f77 100644
+--- a/core/__init__.py
++++ b/core/__init__.py
+@@ -12,12 +12,14 @@ P4（渲染与工程化）不修改这里的任何逻辑，只是**调用**它
+ 
+ from .algorithms import (
+     ALGORITHMS,
++    WEIGHTS,
+     Leg,
+     RouteResult,
+     astar,
+     bfs_min_transfers,
+     compare_algorithms,
+     dijkstra,
++    normalise_weight,
+     solve,
+ )
+ from .graph import Edge, MetroGraph, MetroLine, Station
+@@ -33,10 +35,12 @@ __all__ = [
+     "MetroLine",
+     "RouteResult",
+     "Station",
++    "WEIGHTS",
+     "astar",
+     "bfs_min_transfers",
+     "compare_algorithms",
+     "dijkstra",
+     "load_dataset",
++    "normalise_weight",
+     "solve",
+ ]
+diff --git a/core/algorithms.py b/core/algorithms.py
+index 31121fa..4e1e8a5 100644
+--- a/core/algorithms.py
++++ b/core/algorithms.py
+@@ -3,10 +3,11 @@
+ 三种算法共用同一张「站台图」（站点 × 线路），都返回 RouteResult，
+ 因此界面层不需要关心算法细节，只负责把结果画出来。
+ 
+-* Dijkstra：边权 = 乘车/换乘时间，求总耗时最短。
+-* A*      ：在 Dijkstra 基础上加入欧几里得距离启发函数，减少扩展节点。
++* Dijkstra：边权 = 乘车/换乘时间（默认）或里程，求总耗时/总里程最短。
++* A*      ：在 Dijkstra 基础上加入可采纳启发函数（时间权重用直线距离/最高速度，
++             距离权重用直线距离），减少扩展节点，结果仍最优。
+ * BFS     ：以「换乘次数」为层数扩展，求换乘最少；层内再用整条线路扩展，
+-             不做时间优化（这正是它和 Dijkstra 结果不同的原因）。
++             最少换乘次数确定后，在同换乘次数约束下按 ``weight`` 择优。
+ """
+ 
+ from __future__ import annotations
+@@ -18,7 +19,35 @@ import time
+ from collections import deque
+ from dataclasses import dataclass, field
+ 
+-from .graph import MetroGraph
++from .graph import Edge, MetroGraph
++
++#: Dijkstra/A* 支持的优化目标：time=最快（默认，兼容旧接口）/ distance=里程最短。
++WEIGHTS = ("time", "distance")
++_WEIGHT_ALIASES = {
++    "time": "time", "duration": "time", "minutes": "time",
++    "时间": "time", "最快": "time", "最短时间": "time",
++    "distance": "distance", "km": "distance", "length": "distance",
++    "距离": "distance", "里程": "distance", "最短距离": "distance",
++}
++
++
++def normalise_weight(weight: str = "time") -> str:
++    """把权重名解析成 ``time``（最快，默认）或 ``distance``（里程最短）。
++
++    接受英文与中文别名；未知权重抛 ``ValueError``（与 ``solve`` 的
++    “未知算法”保持同一种错误风格，界面层会转成中文提示）。
++    """
++    text = str(weight or "time").strip().lower()
++    if text in _WEIGHT_ALIASES:
++        return _WEIGHT_ALIASES[text]
++    raise ValueError(
++        f"未知权重：{weight!r}，可选：time / distance（也接受 时间/距离 等别名）"
++    )
++
++
++def _edge_cost(edge: Edge, weight: str) -> float:
++    """按优化目标取边权：时间（默认）或距离。"""
++    return edge.distance if weight == "distance" else edge.time
+ 
+ 
+ @dataclass
+@@ -50,6 +79,7 @@ class RouteResult:
+     elapsed_ms: float = 0.0
+     visited_order: list[str] = field(default_factory=list)  # 供搜索动画使用
+     message: str = ""
++    weight: str = "time"        # 优化目标：time=最快（默认）/ distance=里程最短
+ 
+     @property
+     def station_count(self) -> int:
+@@ -69,6 +99,7 @@ def _result_from_platforms(
+     elapsed_ms: float,
+     visited_order: list[str],
+     message: str = "搜索成功",
++    weight: str = "time",
+ ) -> RouteResult:
+     """把站台节点链转换为「站点序列 + 分段列表 + 统计指标」。"""
+     if not chain:
+@@ -81,6 +112,7 @@ def _result_from_platforms(
+             elapsed_ms=elapsed_ms,
+             visited_order=visited_order,
+             message="两站之间不存在连通路径",
++            weight=weight,
+         )
+ 
+     stations: list[str] = [chain[0][0]]
+@@ -125,6 +157,7 @@ def _result_from_platforms(
+         elapsed_ms=elapsed_ms,
+         visited_order=visited_order,
+         message=message,
++        weight=weight,
+     )
+ 
+ 
+@@ -144,7 +177,8 @@ def _chain_from_prev(
+ 
+ 
+ def _trivial(
+-    graph: MetroGraph, algorithm: str, start_id: str, end_id: str, elapsed: float
++    graph: MetroGraph, algorithm: str, start_id: str, end_id: str, elapsed: float,
++    weight: str = "time",
+ ) -> RouteResult:
+     return RouteResult(
+         algorithm=algorithm,
+@@ -156,18 +190,27 @@ def _trivial(
+         total_distance=0.0,
+         message="起点与终点相同",
+         elapsed_ms=elapsed,
++        weight=weight,
+     )
+ 
+ 
+ # ----------------------------------------------------------------------
+ # Dijkstra
+ # ----------------------------------------------------------------------
+-def dijkstra(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+-    """基于优先队列（二叉堆）的 Dijkstra 最短耗时路径。"""
++def dijkstra(
++    graph: MetroGraph, start_id: str, end_id: str, weight: str = "time"
++) -> RouteResult:
++    """基于优先队列（二叉堆）的 Dijkstra。
++
++    ``weight="time"``（默认）求总耗时最短；``weight="distance"`` 求总里程最短。
++    换乘边的距离为 0，因此距离权重下换乘不增加里程、只增加时间。
++    """
++    weight = normalise_weight(weight)
+     started = time.perf_counter()
+     if start_id == end_id:
+         return _trivial(
+-            graph, "Dijkstra", start_id, end_id, (time.perf_counter() - started) * 1000
++            graph, "Dijkstra", start_id, end_id,
++            (time.perf_counter() - started) * 1000, weight=weight,
+         )
+ 
+     counter = itertools.count()
+@@ -203,7 +246,7 @@ def dijkstra(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+ 
+         for edge in graph.adjacency[node]:
+             nxt = (edge.to_station, edge.to_line)
+-            new_dist = current_dist + edge.time
++            new_dist = current_dist + _edge_cost(edge, weight)
+             if new_dist < dist.get(nxt, math.inf) - 1e-12:
+                 dist[nxt] = new_dist
+                 prev[nxt] = (node, edge.kind)
+@@ -220,6 +263,7 @@ def dijkstra(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+             elapsed_ms=elapsed_ms,
+             visited_order=visited_order,
+             message="两站之间不存在连通路径",
++            weight=weight,
+         )
+     return _result_from_platforms(
+         graph,
+@@ -230,18 +274,28 @@ def dijkstra(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+         expanded,
+         elapsed_ms,
+         visited_order,
++        weight=weight,
+     )
+ 
+ 
+ # ----------------------------------------------------------------------
+ # A*
+ # ----------------------------------------------------------------------
+-def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+-    """A*：f(n) = g(n) + h(n)，h 为到终点的直线距离换算时间。"""
++def astar(
++    graph: MetroGraph, start_id: str, end_id: str, weight: str = "time"
++) -> RouteResult:
++    """A*：f(n) = g(n) + h(n)。
++
++    ``weight="time"``（默认）时 h 为“直线距离 / 全网最高速度”，单位分钟；
++    ``weight="distance"`` 时 h 直接取直线距离（km）。两种 h 都不会高估真实
++    代价，因此 A* 结果与同权重的 Dijkstra 一致，但扩展更少。
++    """
++    weight = normalise_weight(weight)
+     started = time.perf_counter()
+     if start_id == end_id:
+         return _trivial(
+-            graph, "A*", start_id, end_id, (time.perf_counter() - started) * 1000
++            graph, "A*", start_id, end_id,
++            (time.perf_counter() - started) * 1000, weight=weight,
+         )
+ 
+     counter = itertools.count()
+@@ -256,7 +310,10 @@ def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+         node = (start_id, line_id)
+         g_score[node] = 0.0
+         prev[node] = None
+-        h = graph.heuristic(start_id, end_id)
++        if weight == "distance":
++            h = graph.heuristic_distance(start_id, end_id)
++        else:
++            h = graph.heuristic(start_id, end_id)
+         heapq.heappush(heap, (h, 0.0, next(counter), node))
+ 
+     target: tuple[str, str] | None = None
+@@ -277,11 +334,15 @@ def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+ 
+         for edge in graph.adjacency[node]:
+             nxt = (edge.to_station, edge.to_line)
+-            new_g = current_g + edge.time
++            new_g = current_g + _edge_cost(edge, weight)
+             if new_g < g_score.get(nxt, math.inf) - 1e-12:
+                 g_score[nxt] = new_g
+                 prev[nxt] = (node, edge.kind)
+-                f = new_g + graph.heuristic(edge.to_station, end_id)
++                if weight == "distance":
++                    h = graph.heuristic_distance(edge.to_station, end_id)
++                else:
++                    h = graph.heuristic(edge.to_station, end_id)
++                f = new_g + h
+                 heapq.heappush(heap, (f, new_g, next(counter), nxt))
+ 
+     elapsed_ms = (time.perf_counter() - started) * 1000
+@@ -295,6 +356,7 @@ def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+             elapsed_ms=elapsed_ms,
+             visited_order=visited_order,
+             message="两站之间不存在连通路径",
++            weight=weight,
+         )
+     return _result_from_platforms(
+         graph,
+@@ -305,6 +367,7 @@ def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+         closed_expanded,
+         elapsed_ms,
+         visited_order,
++        weight=weight,
+     )
+ 
+ 
+@@ -312,13 +375,14 @@ def astar(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+ # 分层 BFS：最少换乘
+ # ----------------------------------------------------------------------
+ def _fastest_within_transfers(
+-    graph: MetroGraph, start_id: str, end_id: str, max_transfers: int
++    graph: MetroGraph, start_id: str, end_id: str, max_transfers: int,
++    weight: str = "time",
+ ) -> RouteResult | None:
+-    """在“换乘次数不超过 max_transfers”的约束下，求总耗时最短的路径。
++    """在“换乘次数不超过 max_transfers”的约束下，按 ``weight`` 择优。
+ 
+     这是对分层 BFS 的补充：BFS 只保证换乘次数最少，同一层里可能存在
+     绕远路的方案。这里把状态扩展为 (站点, 线路, 已换乘次数)，再跑一次
+-    Dijkstra，从而在“最少换乘”的前提下按耗时择优。
++    Dijkstra，从而在“最少换乘”的前提下按耗时（默认）或里程择优。
+ 
+     状态数最多为 |站台| × (max_transfers+1)，本数据规模下开销很小。
+     """
+@@ -329,6 +393,7 @@ def _fastest_within_transfers(
+         tuple[str, str, int], tuple[tuple[str, str, int], str] | None
+     ] = {}
+     visited: set[tuple[str, str, int]] = set()
++    visited_order: list[str] = []
+ 
+     for line_id in graph.station_lines[start_id]:
+         state = (start_id, line_id, 0)
+@@ -343,6 +408,8 @@ def _fastest_within_transfers(
+             continue
+         visited.add(state)
+         station, line_id, _ = state
++        if not visited_order or visited_order[-1] != station:
++            visited_order.append(station)
+         if station == end_id:
+             target = state
+             break
+@@ -351,7 +418,7 @@ def _fastest_within_transfers(
+             if next_transfers > max_transfers:
+                 continue
+             nxt = (edge.to_station, edge.to_line, next_transfers)
+-            new_dist = current_dist + edge.time
++            new_dist = current_dist + _edge_cost(edge, weight)
+             if new_dist < dist.get(nxt, math.inf) - 1e-12:
+                 dist[nxt] = new_dist
+                 prev[nxt] = (state, edge.kind)
+@@ -367,13 +434,16 @@ def _fastest_within_transfers(
+         node = entry[0] if entry else None
+     chain.reverse()
+     return _result_from_platforms(
+-        graph, chain, "BFS", start_id, end_id, 0, 0.0, [],
+-        message="搜索成功（最少换乘，同换乘次数下按耗时择优）",
++        graph, chain, "BFS", start_id, end_id, 0, 0.0, visited_order,
++        message="搜索成功（最少换乘，同换乘次数下按权重择优）",
++        weight=weight,
+     )
+ 
+ 
+-def bfs_min_transfers(graph: MetroGraph, start_id: str, end_id: str) -> RouteResult:
+-    """以换乘次数为层数的 BFS，并在最少换乘约束下按耗时择优。
++def bfs_min_transfers(
++    graph: MetroGraph, start_id: str, end_id: str, weight: str = "time"
++) -> RouteResult:
++    """以换乘次数为层数的 BFS，并在最少换乘约束下按 ``weight`` 择优。
+ 
+     第 k 层保存「恰好换乘 k 次可达」的站台。每弹出一个站台，就沿它所属的
+     线路一次扩展整条线（同一条线上的所有站点换乘次数都不变），再把这些站点
+@@ -381,13 +451,18 @@ def bfs_min_transfers(graph: MetroGraph, start_id: str, end_id: str) -> RouteRes
+     就是最少换乘次数。
+ 
+     BFS 只负责确定“最少换乘几次”；同一换乘次数下可能有多条路线，
+-    随后在换乘次数不超过该值的约束下按总耗时再做一次最短路搜索，
+-    避免选中绕远路的方案。
++    随后在换乘次数不超过该值的约束下按 ``weight``（默认耗时，可改为里程）
++    再做一次最短路搜索，避免选中绕远路的方案。
++
++    ``expanded`` 记录的是分层 BFS 的“线路扩展帧”（一条线一次），与
++    Dijkstra/A* 的逐站台扩展**不是同一计数口径**，报告中已单列说明。
+     """
++    weight = normalise_weight(weight)
+     started = time.perf_counter()
+     if start_id == end_id:
+         return _trivial(
+-            graph, "BFS", start_id, end_id, (time.perf_counter() - started) * 1000
++            graph, "BFS", start_id, end_id,
++            (time.perf_counter() - started) * 1000, weight=weight,
+         )
+ 
+     start_platforms = [(start_id, lid) for lid in graph.station_lines[start_id]]
+@@ -449,16 +524,23 @@ def bfs_min_transfers(graph: MetroGraph, start_id: str, end_id: str) -> RouteRes
+             elapsed_ms=elapsed_ms,
+             visited_order=visited_order,
+             message="两站之间不存在连通路径",
++            weight=weight,
+         )
+ 
+-    # 第二阶段：在“不超过最少换乘次数”的约束下按耗时择优
++    # 第二阶段：在“不超过最少换乘次数”的约束下按 weight 择优
+     min_transfers = level - 1
+-    optimized = _fastest_within_transfers(graph, start_id, end_id, min_transfers)
++    optimized = _fastest_within_transfers(
++        graph, start_id, end_id, min_transfers, weight=weight
++    )
+     if optimized is not None and optimized.found:
++        # expanded 仍是分层 BFS 的线路扩展帧（口径见 docstring / 报告注脚）；
++        # 动画改用第二阶段（决定最终路径）的搜索顺序，保证“搜索波”与高亮
++        # 路径同源；旧数据/无记录时退回分层 BFS 的层序。
+         optimized.expanded = expanded
+         optimized.elapsed_ms = (time.perf_counter() - started) * 1000
+-        optimized.visited_order = visited_order
++        optimized.visited_order = optimized.visited_order or visited_order
+         optimized.transfers = min_transfers
++        optimized.weight = weight
+         return optimized
+ 
+     # 理论上不会走到这里；保留 BFS 原始路径作为兜底
+@@ -473,6 +555,7 @@ def bfs_min_transfers(graph: MetroGraph, start_id: str, end_id: str) -> RouteRes
+         (time.perf_counter() - started) * 1000,
+         visited_order,
+         message="搜索成功（按换乘次数最少）",
++        weight=weight,
+     )
+     result.transfers = min_transfers
+     return result
+@@ -488,22 +571,30 @@ ALGORITHMS = {
+ }
+ 
+ 
+-def solve(graph: MetroGraph, algorithm: str, start_id: str, end_id: str) -> RouteResult:
+-    """按名称调用算法，供界面层使用。"""
++def solve(
++    graph: MetroGraph, algorithm: str, start_id: str, end_id: str,
++    weight: str = "time",
++) -> RouteResult:
++    """按名称调用算法，供界面层/接口层使用。
++
++    ``weight``：``time``（默认，最快）或 ``distance``（里程最短），
++    也接受“时间/距离/最快/最短距离”等中文别名。
++    """
+     try:
+         func = ALGORITHMS[algorithm]
+     except KeyError as exc:
+         raise ValueError(f"未知算法：{algorithm}") from exc
+     if start_id not in graph.stations or end_id not in graph.stations:
+         raise ValueError("起点或终点不在当前路网中")
+-    return func(graph, start_id, end_id)
++    weight = normalise_weight(weight)
++    return func(graph, start_id, end_id, weight=weight)
+ 
+ 
+ def compare_algorithms(
+-    graph: MetroGraph, start_id: str, end_id: str
++    graph: MetroGraph, start_id: str, end_id: str, weight: str = "time"
+ ) -> dict[str, RouteResult]:
+-    """依次运行三种算法，返回对比结果。"""
++    """依次运行三种算法，返回对比结果（默认按最快口径）。"""
+     return {
+-        name: solve(graph, name, start_id, end_id)
++        name: solve(graph, name, start_id, end_id, weight=weight)
+         for name in ("Dijkstra", "A*", "BFS")
+     }
+diff --git a/core/graph.py b/core/graph.py
+index a371ea2..64224f6 100644
+--- a/core/graph.py
++++ b/core/graph.py
+@@ -28,13 +28,18 @@ class Station:
+ 
+ @dataclass(frozen=True)
+ class MetroLine:
+-    """线路：按列车行驶顺序排列的站点 ID 序列；loop 表示环线。"""
++    """线路：按列车行驶顺序排列的站点 ID 序列；loop 表示环线。
++
++    ``speed_kmh`` 可选：用来表达“快线/慢线 / 接驳线”的差异；``None`` 表示
++    使用全网默认速度（``MetroGraph.speed_kmh``），因此旧数据格式完全兼容。
++    """
+ 
+     id: str
+     name: str
+     color: str
+     loop: bool
+     stations: tuple[str, ...]
++    speed_kmh: float | None = None
+ 
+ 
+ @dataclass(frozen=True)
+@@ -107,7 +112,7 @@ class MetroGraph:
+                 pairs.append((order[-1], order[0]))
+             for a, b in pairs:
+                 distance = self.distance(a, b)
+-                time = self.ride_time(distance)
++                time = self.ride_time(distance, line.id)
+                 self.adjacency[(a, line.id)].append(
+                     Edge(b, line.id, "ride", line.id, time, distance)
+                 )
+@@ -141,24 +146,51 @@ class MetroGraph:
+         sa, sb = self.stations[a], self.stations[b]
+         return math.hypot(sa.x - sb.x, sa.y - sb.y)
+ 
+-    def ride_time(self, distance: float) -> float:
+-        """乘车时间 = 行驶时间 + 停站时间。"""
+-        return distance / self.speed_kmh * 60.0 + self.dwell_minutes
++    def line_speed(self, line_id: str | None = None) -> float:
++        """线路的旅行速度（km/h）：per-line 优先，缺省回退全网 ``speed_kmh``。
++
++        数据格式里 ``lines[].speed_kmh`` 是可选字段；没写时行为与旧版完全一致。
++        """
++        if line_id:
++            line = self.lines.get(line_id)
++            if line is not None and line.speed_kmh and line.speed_kmh > 0:
++                return float(line.speed_kmh)
++        return float(self.speed_kmh)
++
++    def max_speed_kmh(self) -> float:
++        """全网最高速度；A* 的启发函数用它保证可采纳（不高估真实时间）。"""
++        speeds = [float(self.speed_kmh)]
++        speeds.extend(
++            float(line.speed_kmh)
++            for line in self.lines.values()
++            if line.speed_kmh is not None and line.speed_kmh > 0
++        )
++        return max(speeds)
++
++    def ride_time(self, distance: float, line_id: str | None = None) -> float:
++        """乘车时间 = 行驶时间 + 停站时间（支持 per-line 速度）。"""
++        speed = self.line_speed(line_id)
++        return distance / speed * 60.0 + self.dwell_minutes
+ 
+     def heuristic(self, station_id: str, target_id: str) -> float:
+-        """A* 启发函数 h(n)：当前站到终点的直线距离 / 最高速度（分钟）。
++        """A* 启发函数 h(n)：当前站到终点的直线距离 / **全网最高速度**（分钟）。
+ 
+         因为实际乘车时间一定不小于「直线距离 / 最高速度」，且换乘时间为正，
+-        所以 h(n) 不会高估真实代价（可采纳），A* 仍能得到最优路径。
++        所以 h(n) 不会高估真实代价（可采纳），A* 仍能得到最优路径；
++        线路有 per-line 速度时用 max_speed_kmh()，仍不会高估。
+         """
+-        return self.distance(station_id, target_id) / self.speed_kmh * 60.0
++        return self.distance(station_id, target_id) / self.max_speed_kmh() * 60.0
++
++    def heuristic_distance(self, station_id: str, target_id: str) -> float:
++        """距离权重下 A* 的启发函数：直接取两站直线距离（km）。"""
++        return self.distance(station_id, target_id)
+ 
+     def segment(self, line_id: str, a: str, b: str) -> tuple[float, float]:
+         """同一条线路上相邻两站 (a,b) 的 (时间, 距离)。"""
+         key = (line_id, a, b)
+         if key not in self._segment_cache:
+             distance = self.distance(a, b)
+-            self._segment_cache[key] = (self.ride_time(distance), distance)
++            self._segment_cache[key] = (self.ride_time(distance, line_id), distance)
+         return self._segment_cache[key]
+ 
+     def stations_between(self, line_id: str, a: str, b: str) -> list[str]:
+diff --git a/core/loader.py b/core/loader.py
+index 138a737..cadf8ce 100644
+--- a/core/loader.py
++++ b/core/loader.py
+@@ -99,20 +99,33 @@ def _load_json(path: str) -> MetroDataset:
+             raise DataFormatError(
+                 f"站点记录不完整或坐标不是数字：{item}"
+             ) from exc
++        if station.id in stations:
++            raise DataFormatError(
++                f"站点 ID 重复：{station.id}（JSON stations 中出现了多次，"
++                "请改成唯一 ID）"
++            )
+         stations[station.id] = station
+ 
+     lines: dict[str, MetroLine] = {}
+     for item in payload.get("lines", []):
+         try:
++            raw_speed = item.get("speed_kmh")
++            if raw_speed is not None:
++                raw_speed = float(raw_speed)
++                if raw_speed <= 0:
++                    raise ValueError(f"线路 speed_kmh 必须为正数：{raw_speed}")
+             line = MetroLine(
+                 id=str(item["id"]).strip(),
+                 name=str(item["name"]).strip(),
+                 color=str(item.get("color", "#7F8C8D")),
+                 loop=bool(item.get("loop", False)),
+                 stations=tuple(str(s).strip() for s in item["stations"]),
++                speed_kmh=raw_speed,
+             )
+-        except (KeyError, TypeError) as exc:
+-            raise DataFormatError(f"线路记录不完整：{item}") from exc
++        except (KeyError, TypeError, ValueError) as exc:
++            raise DataFormatError(f"线路记录不完整或 speed_kmh 非法：{item}") from exc
++        if line.id in lines:
++            raise DataFormatError(f"线路 ID 重复：{line.id}（JSON lines 中出现了多次）")
+         lines[line.id] = line
+ 
+     return MetroDataset(
+@@ -183,6 +196,10 @@ def _load_txt(path: str) -> MetroDataset:
+                 raise DataFormatError(
+                     f"第 {line_no} 行站点坐标不是数字：{text}"
+                 ) from exc
++            if station.id in stations:
++                raise DataFormatError(
++                    f"第 {line_no} 行站点 ID 重复：{station.id}"
++                )
+             stations[station.id] = station
+         elif keyword == "LINE":
+             if len(parts) < 7:
+@@ -196,6 +213,8 @@ def _load_txt(path: str) -> MetroDataset:
+                 loop=parts[4] == "1",
+                 stations=tuple(parts[5:]),
+             )
++            if line.id in lines:
++                raise DataFormatError(f"第 {line_no} 行线路 ID 重复：{line.id}")
+             lines[line.id] = line
+         else:
+             raise DataFormatError(f"第 {line_no} 行无法识别的记录：{parts[0]}")
+diff --git a/docs/API接口说明.md b/docs/API接口说明.md
+index 809c583..06b08dd 100644
+--- a/docs/API接口说明.md
++++ b/docs/API接口说明.md
+@@ -28,6 +28,7 @@ nav = connect()                                        # 默认 data/beijing_met
+ print(nav.info())                                      # 134 站 / 7 线 / 154 站台节点…
+ print(nav.route("苹果园", "天通苑北")["summary"])        # 站名或站 ID 都行
+ print(nav.route("S001", "S061", algorithm="A*")["summary"])
++print(nav.route("苹果园", "天通苑北", weight="distance")["summary"])  # 里程最短（多准则）
+ print(nav.compare("慈寿寺", "崇文门")["highlights"])     # 三算法差异摘要
+ 
+ # 自己指定数据文件（.json / .txt 都支持）
+@@ -40,6 +41,7 @@ demo = connect("data/demo_city.json")
+ python metro_api.py info
+ python metro_api.py route --start 苹果园 --end 天通苑北
+ python metro_api.py route --start S001 --end S061 --algorithm A* --json
++python metro_api.py route --start S001 --end S061 --weight distance --json
+ python metro_api.py compare --start S001 --end S061
+ python metro_api.py stations --line L1 --query 门
+ python metro_api.py export --output _smoke/network.json
+@@ -55,6 +57,7 @@ python tools/serve_api.py --port 8765       # 或 python metro_api.py serve --po
+ ```powershell
+ # PowerShell
+ Invoke-RestMethod "http://127.0.0.1:8765/api/route?start=S001&end=S061"
++Invoke-RestMethod "http://127.0.0.1:8765/api/route?start=S001&end=S061&weight=distance"
+ 
+ # curl（中文站名记得 URL 编码）
+ curl "http://127.0.0.1:8765/api/route?start=%E8%8B%B9%E6%9E%9C%E5%9B%AD&end=%E5%A4%A9%E9%80%9A%E8%8B%91%E5%8C%97"
+@@ -86,8 +89,8 @@ console.log(data.summary.time_min, data.summary.transfers);
+ | `lines()` | list[dict] | 线路列表（颜色、是否环线、站序） |
+ | `station(key)` | dict | 单站详情（`is_transfer` 标记换乘站） |
+ | `resolve_station(key)` | str | 站 ID 或站名 → 站 ID；找不到抛 `StationNotFound` |
+-| `route(start, end, *, algorithm="Dijkstra")` | dict | 求路径；**无路径不是异常**，返回 `found=false` |
+-| `compare(start, end)` | dict | 三种算法同跑 + 差异摘要 |
++| `route(start, end, *, algorithm="Dijkstra", weight="time")` | dict | 求路径；`weight=time`（默认，最快）/ `distance`（最短里程）；**无路径不是异常**，返回 `found=false` |
++| `compare(start, end, *, weight="time")` | dict | 三种算法同跑 + 差异摘要；`weight` 同上 |
+ | `export_network(path)` | str | 导出「规模 + 站点 + 线路」JSON，给前端/其他服务用 |
+ | `city` / `data_path` / `algorithms` | str / str / list | 只读属性 |
+ 
+@@ -97,6 +100,7 @@ console.log(data.summary.time_min, data.summary.transfers);
+ {
+   "ok": true,
+   "algorithm": "Dijkstra",
++  "weight": "time",
+   "found": true,
+   "start": {"id": "S001", "name": "苹果园"},
+   "end": {"id": "S061", "name": "天通苑北"},
+@@ -127,8 +131,10 @@ console.log(data.summary.time_min, data.summary.transfers);
+ 
+ 字段口径：
+ 
++* `weight` 为优化目标：`time`（默认，最快）或 `distance`（里程最短）；两者允许给出
++  不同的最优路径（例如 S001→S061：最快 79.6 min / 33.24 km，最短里程 82.3 min / 33.22 km）；
+ * `summary.time_min` = 乘车时间 + 换乘时间；`distance_km` 只累加乘车段；
+-* `expanded` 为扩展站台节点数（BFS 按线路口径，与 Dijkstra/A* 不同，不要横比，见报告 4.6）；
++* `expanded` 为扩展站台节点数（BFS 是“线路扩展帧”，与 Dijkstra/A* 不同源、不要横比，见报告 4.6）；
+ * `elapsed_ms` 由 P2 内部计时，`wall_ms` 为接口层整体计时，两者相差调度噪声；
+ * `legs[].kind` = `ride`（乘车）或 `transfer`（换乘）；每段首尾相接，可直接画路径。
+ 
+@@ -158,8 +164,8 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
+ | `info` | 路网规模 | `--json` |
+ | `stations` | 站点列表/搜索 | `--line L1`、`--query 门`、`--json` |
+ | `lines` | 线路列表 | `--json` |
+-| `route` | 求路径 | `--start`、`--end`、`--algorithm`、`--json` |
+-| `compare` | 三算法对比 | `--start`、`--end`、`--json` |
++| `route` | 求路径 | `--start`、`--end`、`--algorithm`、`--weight`、`--json` |
++| `compare` | 三算法对比 | `--start`、`--end`、`--weight`、`--json` |
+ | `export` | 导出路网 JSON | `--output` |
+ | `serve` | 起 HTTP 服务 | `--host`、`--port`、`--quiet` |
+ 
+@@ -181,9 +187,9 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
+ | GET | `/api/stations?line=L1&query=门` | 站点列表/搜索 |
+ | GET | `/api/lines` | 线路列表 |
+ | GET | `/api/station?q=苹果园` | 单站详情（也接受 `?id=`/`?name=`） |
+-| GET | `/api/route?start=..&end=..&algorithm=Dijkstra` | 寻路 |
+-| POST | `/api/route` | 寻路，JSON body `{"start":..,"end":..,"algorithm":..}` |
+-| GET | `/api/compare?start=..&end=..` | 三算法对比 |
++| GET | `/api/route?start=..&end=..&algorithm=Dijkstra&weight=time` | 寻路（`weight=time/distance`） |
++| POST | `/api/route` | 寻路，JSON body `{"start":..,"end":..,"algorithm":..,"weight":..}` |
++| GET | `/api/compare?start=..&end=..&weight=time` | 三算法对比（`weight` 同上） |
+ | OPTIONS | 任意 | CORS 预检（`Access-Control-Allow-Origin: *`） |
+ 
+ 约定：
+@@ -231,7 +237,7 @@ except MetroAPIError as exc:
+ ## 6. 测试与 CI
+ 
+ ```powershell
+-python -m unittest discover -s tests -v     # 35 个用例，约 2.6 s
++python -m unittest discover -s tests -v     # 55 个用例，约 2.6 s
+ ```
+ 
+ 覆盖：数据加载与规模、站名/ID 解析、已知 OD 的期望值（79.575299 min / 151 扩展）、
+@@ -275,13 +281,14 @@ URL 里中文必须百分号编码（浏览器/`Invoke-RestMethod`/`requests` 
+ 
+ | 版本 | 日期 | 变更 |
+ | --- | --- | --- |
+-| 1.0.0 | 2026-10-18 | 首版：Python SDK（`connect`/`MetroNavigator`）、CLI 7 个子命令、HTTP 9 个端点、35 个 unittest、本说明 |
++| 1.0.0 | 2026-10-18 | 首版：Python SDK（`connect`/`MetroNavigator`）、CLI 7 个子命令、HTTP 9 个端点、本说明 |
++| 1.1.0 | 2026-10-18 | 新增 `weight=time/distance` 多准则（SDK/CLI/HTTP 全链路）；数据支持 per-line `speed_kmh`；画布兼容 P2 的 `sid`/`events` 写法；测试增至 55 个 |
+ 
+ ## 附：与任务书的对应关系
+ 
+ | 任务书要求 | 本接口的落实 |
+ | --- | --- |
+ | P4 渲染与工程化「给全班可复用的组件」 | `CanvasView` 之外再提供**无界面调用层**，P3 之外的脚本/前端也能用 |
+-| 质量门「新功能有新断言」 | `tests/test_api.py` 35 个用例；CI 独立执行 |
++| 质量门「新功能有新断言」 | `tests/test_api.py` 55 个用例；CI 独立执行 |
+ | 质量门「UI 改动附截图」 | 本接口不改 UI；HTTP 服务用浏览器/curl 可直接演示 |
+ | 零第三方依赖 | 仅标准库；`http.server` 提供 REST |
+diff --git a/docs/P4-报告章节草稿.md b/docs/P4-报告章节草稿.md
+index 64898eb..25b2df7 100644
+--- a/docs/P4-报告章节草稿.md
++++ b/docs/P4-报告章节草稿.md
+@@ -185,7 +185,7 @@
+ * 密集图会省略部分站名/分段标注，后续可做全局标签排版（如力导向/模拟退火），
+   或把标注改成“悬停显示”；
+ * 图表目前是静态快照，后续可支持导出 SVG、批量生成对比图；
+-* 算法只支持时间/换乘两种准则，后续可加入“步行最少”“票价最低”等多权重；
++* 已支持时间/里程两种权重与最少换乘（线路可声明 speed_kmh）；后续可加入“步行最少”“票价最低”等多权重；
+ * 动画是“搜索结果回放”，不是真正的算法过程可视化；如果要展示堆操作，
+   需要在 P2 里输出更细的事件类型。
+ 
+diff --git a/docs/P4-报告终稿说明.md b/docs/P4-报告终稿说明.md
+index 8bf2e4e..cc80d1f 100644
+--- a/docs/P4-报告终稿说明.md
++++ b/docs/P4-报告终稿说明.md
+@@ -13,7 +13,7 @@
+ | 文件 | 作用 |
+ | --- | --- |
+ | `reports/城市交通路径导航系统_实验报告.docx` | **报告终稿**：封面、分工表、摘要、目录域、五章正文、参考文献、附录 A/B/C |
+-| `reports/城市交通路径导航系统_实验报告.pdf` | **报告终稿 PDF**：打开 docx 更新目录域后导出（34 页，目录带页码），可直接提交/打印 |
++| `reports/城市交通路径导航系统_实验报告.pdf` | **报告终稿 PDF**：打开 docx 更新目录域后导出（35 页，目录带页码），可直接提交/打印 |
+ | `tools/report_common.py` | Word 排版工具（封面 / 摘要 / 目录域 / 标题 / 正文 / 代码 / 图 / 表 / 页眉页脚），由旧项目同名文件改编 |
+ | `tools/make_report.py` | 报告生成器：读真实数据与 `docs/bench.csv` 现算数字，输出上面的 docx |
+ | `tools/make_report_assets.py` | 用 Pillow 绘制 **图 2-1 系统模块划分与数据流**，并校验其余 5 张插图是否存在 |
+@@ -49,10 +49,10 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+ 本机实测（Windows 11、Python 3.12.14、python-docx 1.2.0、Pillow 12.3.0）：
+ 
+ ```text
+-[REPORT] 文件大小：981.4 KB
++[REPORT] 文件大小：982.4 KB
+ [REPORT] 一级标题 9 个，其中正文章 5 个：第1章…第5章
+ [REPORT] 内嵌插图 6 张；表格 15 个（含封面与分工表）
+-[REPORT] 段落 316 段；全文字符（含表格）26228 个；正文汉字 10366 个
++[REPORT] 段落 322 段；全文字符（含表格）27398 个；正文汉字 10822 个
+ 
+ 结论：22 通过 / 0 失败 / 0 警告，共 22 项
+ 闸门：绿（退出码 0）。
+@@ -81,7 +81,7 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+    主要文件与工作内容一一对应，姓名一列留空（`＿＿＿＿`）。
+ 4. **目录是 Word 域**：打开文档后在目录处右键“更新域”或 `Ctrl+A` → `F9`
+    即可生成带页码的目录；`w:updateFields` 已置 true，Word 打开时通常会自动提示更新。
+-   `reports/` 里的 PDF 已更新好目录域再导出（34 页、目录带页码），可直接使用。
++   `reports/` 里的 PDF 已更新好目录域再导出（35 页、目录带页码），可直接使用。
+ 
+ ### 3.2 路径与数据全部改为最终仓库
+ 
+@@ -92,7 +92,7 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+ * 模块路径：`core/loader.py`、`core/graph.py`、`core/algorithms.py`、
+   `ui/window.py`、`ui/canvas.py`、`selfcheck.py`、`tools/`；
+ * 启动命令：`python main.py`、`python main.py --check`、`python main.py --smoke`；
+-* 实验数据：`docs/bench.csv`（由 `tools/bench.py` 生成，5 对起终点 × 3 算法）；
++* 实验数据：`docs/bench.csv`（由 `tools/bench.py` 生成，5 对起终点 × 3 算法；默认只写 `_smoke/`，加 `--update-docs` 才更新 docs）；
+ * 自检数据：`selfcheck.py` 的 10 项输出（10/10、命中误差 11.0 像素等）；
+ * 规模数据：`core.loader` 加载 `data/beijing_metro.json` 后现算（见 §5）。
+ 
+@@ -118,6 +118,20 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+ 
+ ---
+ 
++### 3.5 本次评审整改（2026-10-18）
++
++外部评审（P2 视角）提出 2 个高优先级、4 个中优先级与 5 个低优先级问题，整改后重新生成了
++本报告。报告层面的主要变化：
++
++* **M3**：删除“A* 平均搜索规模最小”的表述，改为“A* 在 Dijkstra/A* 两种逐站台算法中
++  扩展最少；BFS 的 expanded 是线路扩展帧，口径不同、不参与横比”；
++* **M1**：第 1.4 / 3.1 / 3.2 / 5.2 / 5.4 节补“时间/里程双权重 + per-line speed_kmh”
++  的口径，并给出 S001→S061 的实例（最快 79.6 min / 33.24 km vs 最短里程 82.3 min / 33.22 km）；
++* **M2**：4.6 节表注明确 BFS 的 expanded 与最终路径不同源，动画顺序改用第二阶段搜索，
++  保证搜索波与高亮路径一致。
++
++完整清单与代码改动见 [`评审整改记录-2026-10-18.md`](评审整改记录-2026-10-18.md)。
++
+ ## 4. 图表清单与文件对应
+ 
+ | 编号 | 内容 | 图源文件 | 生成方式 |
+@@ -209,7 +223,7 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+ 1. **填写姓名/学号/班级/组号**（封面与分工表的 `＿＿＿＿` 占位）；
+ 2. **更新目录**：Word / WPS 中打开 → 目录处右键“更新域” → 更新整个目录
+    （LibreOffice 打开时目录域不会自动展开，属正常现象）；
+-3. **PDF 已导出并与终稿同步**：`reports/城市交通路径导航系统_实验报告.pdf`（34 页，
++3. **PDF 已导出并与终稿同步**：`reports/城市交通路径导航系统_实验报告.pdf`（35 页，
+    目录带页码），提交前确认页码、图题、字体即可；若要重导，用 WPS / Word 打开 docx
+    更新目录域后“另存为 PDF”；
+ 4. 如需重新生成 docx，重跑 `python tools/make_report.py` 后会回到“目录域待更新”状态，
+@@ -217,8 +231,8 @@ python tools/make_report_assets.py --force  # 强制重画图 2-1
+ 
+ 已知限制：
+ 
+-* 页数由 `check_report.py` 按字号/行距/图高/表行数估算（本版约 36 页）；
+-  实际导出为 WPS 34 页 / LibreOffice 35 页，差异来自分页引擎，不是 Word 的精确分页；
++* 页数由 `check_report.py` 按字号/行距/图高/表行数估算（本版约 37 页）；
++  实际导出为 WPS 35 页 / LibreOffice 37 页，差异来自分页引擎，不是 Word 的精确分页；
+ * 图 4-4 的图源自带标题与图注，报告图注在下方单独编号，二者文字略有重复，属素材原样；
+ * 密集路网图（图 4-2）无法同时“全部站名可见”与“零重叠”，本包按验收要求保证零重叠、
+   按优先级省略，并在正文注明省略数量；
+diff --git a/docs/P4-终稿验收记录.md b/docs/P4-终稿验收记录.md
+index 4af73b4..c5806aa 100644
+--- a/docs/P4-终稿验收记录.md
++++ b/docs/P4-终稿验收记录.md
+@@ -1,5 +1,8 @@
+ # P4 终稿验收记录（独立验收）
+ 
++
++> 注：2026-10-18 按外部评审整改后，报告与代码已重新生成（PDF 为 WPS 35 页 / LibreOffice 37 页，测试 55 个）；本文件保留整改前的验收快照，最新整改见 [`评审整改记录-2026-10-18.md`](评审整改记录-2026-10-18.md)。
++
+ > 验收人：`verifier`（Agent Teams 独立验收，不参与报告/GitHub 包实现）
+ > 验收时间：2026-10-17 23:05 – 23:27（Asia/Shanghai）
+ > 验收对象：`metro-p4` 仓库最终提交 **`19765e1`**（`main` 分支；= `b0751c0` + 1 个仅改 PDF 的修复提交）
+diff --git a/docs/P4-验收与交接.md b/docs/P4-验收与交接.md
+index 6351f09..9f5599b 100644
+--- a/docs/P4-验收与交接.md
++++ b/docs/P4-验收与交接.md
+@@ -15,7 +15,7 @@
+ | P4-06 | 导出 PNG/PS + 截图脚本 | `CanvasView.export`、`tools/export_canvas.py` | 完成 |
+ | P4-07 | 自检矩阵 + GUI 冒烟（10 项） | `selfcheck.py`、`main.py --check` | 完成 |
+ | P4-08 | 打包与运行说明 + 启动脚本 | `README.md`、`run.ps1`、`run.bat` | 完成 |
+-| P4-09 | 报告统稿 + 演示录屏 | `reports/城市交通路径导航系统_实验报告.docx`、`reports/城市交通路径导航系统_实验报告.pdf`、`tools/make_report.py`、`tools/check_report.py`、`docs/P4-报告终稿说明.md`、`docs/P4-演示动画.gif`、`docs/P4-演示录屏脚本.md` | 五章终稿 docx 与 34 页 PDF（6 图 13 表、`check_report.py` 22/22 绿）+ 自动演示 GIF 完成；2 分钟 mp4 需本机 ffmpeg 按脚本人工录 |
++| P4-09 | 报告统稿 + 演示录屏 | `reports/城市交通路径导航系统_实验报告.docx`、`reports/城市交通路径导航系统_实验报告.pdf`、`tools/make_report.py`、`tools/check_report.py`、`docs/P4-报告终稿说明.md`、`docs/P4-演示动画.gif`、`docs/P4-演示录屏脚本.md` | 五章终稿 docx 与 35 页 PDF（6 图 13 表、`check_report.py` 22/22 绿）+ 自动演示 GIF 完成；2 分钟 mp4 需本机 ffmpeg 按脚本人工录 |
+ 
+ ## 2. 五条验收逐项证据
+ 
+@@ -164,7 +164,7 @@ print(nav.compare("慈寿寺", "崇文门")["highlights"]) # BFS 少 1 次换乘
+ ```powershell
+ python metro_api.py route --start S001 --end S061 --json
+ python tools/serve_api.py --port 8765              # HTTP：GET /api/route?start=..&end=..
+-python -m unittest discover -s tests -v            # 接口回归（35 用例）
++python -m unittest discover -s tests -v            # 接口回归（55 用例）
+ ```
+ 
+ 方法与 JSON 结构、HTTP 端点、错误码见 [`API接口说明.md`](API接口说明.md)。
+@@ -193,7 +193,7 @@ python -m unittest discover -s tests -v            # 接口回归（35 用例）
+       `python tools/check_report.py` 22/22 通过；图 2-1/3-1/4-1~4-4、表 1-1~4-3 编号连续）
+ - [x] GitHub 协作包自测：`python tools/prepare_github.py --check` 0 问题，
+       `--bundle` 55 条目回读 SHA-256 一致（见 `CONTRIBUTING.md`、`docs/GitHub协作与上传指南.md`）
+-- [x] 可调用接口回归：`python -m unittest discover -s tests -v` 35/35 通过（SDK / CLI / HTTP）
++- [x] 可调用接口回归：`python -m unittest discover -s tests -v` 55/55 通过（SDK / CLI / HTTP）
+ - [x] README 实测：从零到界面约 1 分钟（含装 Pillow），< 5 分钟
+ 
+ ## 6. 已知限制（写进报告 5.4）
+@@ -215,11 +215,11 @@ pip install pillow
+ 
+ python main.py --check
+ python selfcheck.py --mutation-demo
+-python -m unittest discover -s tests -v        # 可调用接口回归（35 用例：SDK/CLI/HTTP）
++python -m unittest discover -s tests -v        # 可调用接口回归（55 用例：SDK/CLI/HTTP）
+ python main.py --smoke _smoke/smoke.ps
+ python tools/export_canvas.py _smoke/demo.png --demo --start S1 --end S8
+ python tools/export_canvas.py --figure-pack
+-python tools/bench.py
++python tools/bench.py --update-docs        # 更新报告数据（默认只写 _smoke/）
+ python tools/record_demo.py
+ 
+ # 可调用接口（不打开窗口）
+diff --git a/docs/bench.md b/docs/bench.md
+index 3e9f38e..ac9fcee 100644
+--- a/docs/bench.md
++++ b/docs/bench.md
+@@ -18,6 +18,6 @@
+ | 草房→安河桥北 | A* | 68.6 | 28.6 | 1 | 86 | 0.28 |
+ | 草房→安河桥北 | BFS | 68.6 | 28.6 | 1 | 4 | 0.33 |
+ 
+-- 扩展节点均值：Dijkstra 133.0，A* 76.8，BFS 3.6。A* 借助直线距离启发函数，平均搜索规模最小。
++- 扩展节点均值：Dijkstra 133.0，A* 76.8，BFS 3.6。A* 借助直线距离启发函数，在 Dijkstra/A* 两种“逐站台”算法中扩展最少；BFS 的数字是“线路扩展帧”，口径不同，不参与横比（详见报告 4.6 节）。
+ - 单次寻路耗时中位数均值：Dijkstra 0.27ms，A* 0.24ms，BFS 0.33ms。三者在 134 站规模下都远低于 200ms 的验收阈值。
+ - 换乘次数总计：Dijkstra 6，A* 6，BFS 5。BFS 以换乘次数为层数，因此在跨线场景下换乘不会更多。
+diff --git a/docs/评审整改记录-2026-10-18.md b/docs/评审整改记录-2026-10-18.md
+new file mode 100644
+index 0000000..bd3b68c
+--- /dev/null
++++ b/docs/评审整改记录-2026-10-18.md
+@@ -0,0 +1,114 @@
++# 外部代码评审整改记录（2026-10-18）
++
++> 输入：`评审-P4代码-2026-10-18.md`（外部 P2 视角评审，对象提交 `06e182a`）
++> 输出：本文件逐条记录「问题 → 处理 → 证据」。整改后的提交与 CI 结果见文末。
++> 原则：**能改代码的不只改文档**；高优先级问题全部落地为可执行修复 + 回归测试。
++
++## 0. 总览
++
++| 原级别 | 数量 | 处理结果 |
++| --- | --- | --- |
++| 高（H1、H2） | 2 | ✅ 已修：画布兼容 P2 的 `sid` 与 `(kind, sid)` 事件；新增 5 条兼容测试 |
++| 中（M1–M4） | 4 | ✅ 已修：双权重 + per-line 速度；BFS 口径注脚与动画顺序；报告结论纠正；bench 默认不覆盖入库产物 |
++| 低（L1–L5） | 5 | ✅ 已修：加载器判重、`tests/__init__.py`、公开 `refresh()`、文档补退出码、页数口径 |
++| 信息（I1–I3） | 3 | 记录说明，不改行为（见 §3） |
++| 测试/闸门 | — | unittest 35 → **55**，全部通过；10 项自检、22 项报告检查、3 项 mutation 保持全绿 |
++
++## 1. 高优先级
++
++### H1 · 画布不认 P2 的 `sid` 字段（实测会抛异常）
++
++- **处理**：`ui/canvas.py::_as_station_id` 增加 `sid`（以及字典形式 stations 的 key 回退）。
++- **证据**：`tests/test_contracts.py::CanvasCompatTests::test_graph_accepts_sid_field`
++  用 `Station(sid, name, x, y)` 风格的假对象验证 `normalise_graph()` 成功；
++  `test_graph_dict_stations_falls_back_to_key` 验证 `{"S1": 无 id 对象}` 也能画。
++- **说明**：本次只做“读兼容”，不修改 `core` 的字段名；P1/P2 合并时零改动。
++
++### H2 · `events` 的 `(kind, sid)` 写法被误解析（动画静默失效）
++
++- **处理**：新增 `_as_event_station`：先判 `kind ∈ {settle,visit,push,pop,…}` 再取第二项；
++  否则按站台节点元组取第一项。`normalise_result` 改用它，docstring 同步澄清。
++- **证据**：`test_events_accept_kind_sid_tuples`（`("settle","S1")`）、
++  `test_events_accept_dicts_and_plain_ids`（`{"kind":…,"sid":…}`、纯 ID、`("S3","L1")`）
++  三条测试覆盖；旧写法（纯 ID / 站台元组）行为不变。
++
++## 2. 中优先级
++
++### M1 · 缺少距离权重 / 无法表达快线（任务书 P01 缺口）
++
++- **处理（代码落地，非仅文档）**：
++  - `core/graph.py`：`MetroLine.speed_kmh` 可选字段；`line_speed()` / `max_speed_kmh()`；
++    Dijkstra/A* 边权按 `weight` 取时间或距离；距离权重下 A* 启发函数改用直线距离；
++    A* 时间权重启发函数改用 `max_speed_kmh()`，有快线时仍可采纳。
++  - `core/algorithms.py`：`normalise_weight()`（time/distance + 中文别名）、
++    `dijkstra/astar/bfs_min_transfers/solve/compare_algorithms` 全部支持 `weight`；
++    `RouteResult.weight` 记录口径。
++  - `metro_api.py`：`route(..., weight=)`、`compare(..., weight=)`、CLI `--weight`、
++    HTTP `weight` 查询/请求体全链路；版本号 1.1.0。
++  - 报告第 1.4 / 3.1 / 3.2 / 5.2 / 5.4 节补“双权重 + per-line 速度”的口径，
++    并给出 S001→S061 的实例：最快 79.6 min / 33.24 km vs 最短里程 82.3 min / 33.22 km。
++- **证据**：`tests/test_contracts.py::WeightTests`（4 条：时间/距离最优性、A* 与 Dijkstra
++  在两种权重下同优、中文别名、BFS 权重与 visited_order）；`selfcheck.py` 第 04 项新增
++  距离权重断言（`main.py --check` 实时验证）；API 测试新增 6 条 weight 用例。
++- **兼容性**：默认 `weight="time"`，所有旧调用/报告数值/bench 结果完全不变（已回归）。
++
++### M2 · BFS 的 `expanded` / `visited_order` 与最终路径不同源
++
++- **处理**：
++  - `expanded` 保持“分层 BFS 线路扩展帧”的真实含义，不再被误用为可横比指标：
++    代码 docstring、报告 4.6 表注、自检说明、`docs/bench.md` 均写明“口径不同、不横比”；
++  - **动画顺序**改为使用第二阶段（决定最终路径）的 `visited_order`，只有第二遍没有
++    记录时才回退分层 BFS 层序，保证“搜索波”与高亮路径同源；
++  - 报告 4.6 结论（1）明确“扩展最少”只针对 Dijkstra/A* 两种逐站台算法。
++- **证据**：`WeightTests::test_bfs_weight_and_visited_order` 断言 `visited_order` 非空且
++  从起点开始；`bench.py` 的图注与 summaries 同步改为“BFS 不参与横比”。
++
++### M3 · 报告结论与自身数据矛盾（“A* 平均搜索规模最小”）
++
++- **处理**：源句在 `docs/bench.md` 的自动摘要里；已改为“A* 在 **Dijkstra/A* 两种逐站台
++  算法**中扩展最少；BFS 的数字是线路扩展帧，口径不同，不参与横比”。`tools/bench.py`
++  的 `summaries()` 同步修改；报告 4.6 结论（1）与 5.2 效率段同步加限定语。
++- **证据**：`docs/bench.md` 对应行已改；重新生成的 docx 中不再出现“平均搜索规模最小”
++  （`tools/check_report.py` 22/22 绿）。
++
++### M4 · `tools/bench.py` 默认覆盖入库产物，复跑即让报告闸门变红
++
++- **处理**：默认输出改为 `_smoke/bench.csv`、`_smoke/bench.md`、`_smoke/fig4-4_expanded.png`
++  （已被 `.gitignore` 忽略）；只有显式 `--update-docs` 才写 `docs/`，并在启动时打印警告。
++  README / CONTRIBUTING / P4 验收文档中的命令同步为 `--update-docs` 口径。
++- **证据**：本地执行 `python tools/bench.py --no-chart` 后 `git status` 干净（docs 未被修改）；
++  `docs/bench.csv` 的 15 行与报告表 4-3 保持一致，`check_report.py` 仍 22/22。
++
++## 3. 低优先级
++
++| 编号 | 问题 | 处理 |
++| --- | --- | --- |
++| L1 | 重复站点 ID 被静默覆盖 | `core/loader.py` JSON/TXT 两条路径都判重并抛 `DataFormatError`；线路 ID 同样判重。证据：`LoaderContractTests` 3 条测试 |
++| L2 | `tests/` 缺 `__init__.py` | 已新增 `tests/__init__.py`；`discover -s tests` 与 `discover -s tests -t .` 均可运行 |
++| L3 | 窗口调用画布私有 `_redraw` | 新增公开 `CanvasView.refresh()`；`ui/window.py` 改为 `canvas.after(150, canvas.refresh)` |
++| L4 | CLI 退出码 2 未写进文档 | `docs/API接口说明.md` 已明确 0/1/2/130 四种退出码 |
++| L5 | 页数口径 34 vs 36 | 报告重新生成后同步为“PDF 实际页数（WPS）/ LibreOffice 页数 / 估算页数”三种口径，文档与 PDF 一致 |
++
++## 4. 信息级（记录，不改行为）
++
++- **I1**：HTTP 默认绑定 `127.0.0.1` 且无鉴权，`CORS: *` 对本地演示可接受；
++  已写入文档安全提示，不在本次改动范围。
++- **I2**：`docs/P4-演示动画.gif` 3.6 MB、报告 docx/pdf 约 1 MB 入库；课程交付可接受，
++  长期可迁 LFS/Release，本次不改动历史。
++- **I3**：`ui/canvas.py::export()` 里 `time.sleep(0.01)` 用于等待 DWM 合成；
++  该逻辑只在导出路径、且已有“仅导出路径”的注释说明，保持不动。
++
++## 5. 回归与验收
++
++| 检查 | 结果 |
++| --- | --- |
++| `python -m unittest discover -s tests -v` | **55/55 通过**（原 35 + 新增 20：兼容 5 / 加载器 4 / 权重 4 / API·HTTP·CLI 7） |
++| `python main.py --check` | 10/10 PASS（含 GUI 第 10 项；第 04 项新增双权重断言） |
++| `python selfcheck.py --mutation-demo` | 3/3 `[CAUGHT]` |
++| `python tools/check_report.py` | 22/22 通过（报告重新生成后） |
++| `python tools/prepare_github.py --check --strict` | 0 阻塞 / 0 提醒 |
++| `python tools/bench.py`（默认） | 只写 `_smoke/`，`git status` 干净 |
++| HTTP `weight=distance` | `/api/route?...&weight=distance` 返回 `weight=distance` 且里程更短 |
++
++> 提交与推送：整改提交见 GitHub 仓库 `main` 分支；CI（自检 + mutation + 55 个接口用例）
++> 结果以 Actions 页面为准。
+diff --git a/metro_api.py b/metro_api.py
+index 0d2561e..ca72539 100644
+--- a/metro_api.py
++++ b/metro_api.py
+@@ -70,14 +70,16 @@ if str(PROJECT_ROOT) not in sys.path:
+ 
+ from core import (  # noqa: E402  （必须在 sys.path 调整之后导入）
+     ALGORITHMS,
++    WEIGHTS,
+     DataFormatError,
+     MetroDataset,
+     RouteResult,
+     load_dataset,
++    normalise_weight,
+     solve,
+ )
+ 
+-__version__ = "1.0.0"
++__version__ = "1.1.0"
+ 
+ DEFAULT_DATA = PROJECT_ROOT / "data" / "beijing_metro.json"
+ ALGORITHM_NAMES = ("Dijkstra", "A*", "BFS")
+@@ -190,6 +192,18 @@ def resolve_algorithm(name: Any) -> str:
+     )
+ 
+ 
++def resolve_weight(name: Any = "time") -> str:
++    """把权重别名解析成 ``time``（最快，默认）或 ``distance``（里程最短）。
++
++    失败时抛 :class:`InvalidRequest`（对应 HTTP 400 / CLI 退出码 1），
++    与未知算法保持同一种错误处理风格。
++    """
++    try:
++        return normalise_weight(name)
++    except ValueError as exc:
++        raise InvalidRequest(str(exc)) from exc
++
++
+ # ======================================================================
+ # 核心：MetroNavigator
+ # ======================================================================
+@@ -353,38 +367,53 @@ class MetroNavigator:
+     # ------------------------------------------------------------------
+     # 寻路
+     # ------------------------------------------------------------------
+-    def route(self, start: Any, end: Any, *, algorithm: str = "Dijkstra") -> dict:
++    def route(
++        self,
++        start: Any,
++        end: Any,
++        *,
++        algorithm: str = "Dijkstra",
++        weight: str = "time",
++    ) -> dict:
+         """求一条路径，返回可直接 JSON 化的结果字典。
+ 
+         参数
+         ----
+         start / end : 站 ID 或站名（如 ``"S001"`` / ``"苹果园"``）；
+         algorithm   : ``Dijkstra``（默认，最快）、``A*``、``BFS``（最少换乘），
+-                      也接受 ``astar`` / ``bfs`` / ``最少换乘`` 等别名。
++                      也接受 ``astar`` / ``bfs`` / ``最少换乘`` 等别名；
++        weight      : 优化目标，``time``（默认，最快）或 ``distance``（里程最短），
++                      也接受 ``距离`` / ``最短距离`` 等中文别名；BFS 用它做
++                      “最少换乘”前提下的同层择优。
+ 
+         返回
+         ----
+-        dict：``ok``、``found``、``start``/``end``、``summary``、``stations``、
+-        ``legs``、``message``。无路径时 ``found=False``、列表为空，不抛异常
+-        （「查无路径」是合法结果，不是接口错误）。
++        dict：``ok``、``algorithm``、``weight``、``found``、``start``/``end``、
++        ``summary``、``stations``、``legs``、``message``。无路径时
++        ``found=False``、列表为空，不抛异常。
+         """
+         start_id = self.resolve_station(start)
+         end_id = self.resolve_station(end)
+         algorithm = resolve_algorithm(algorithm)
++        weight = resolve_weight(weight)
+ 
+         started = time.perf_counter()
+-        result = solve(self.graph, algorithm, start_id, end_id)
++        result = solve(self.graph, algorithm, start_id, end_id, weight=weight)
+         wall_ms = (time.perf_counter() - started) * 1000.0
+         return self._result_to_dict(result, wall_ms)
+ 
+-    def compare(self, start: Any, end: Any) -> dict:
+-        """同一对起终点跑三种算法，并给出差异摘要（答辩/报告常用）。"""
++    def compare(self, start: Any, end: Any, *, weight: str = "time") -> dict:
++        """同一对起终点跑三种算法，并给出差异摘要（答辩/报告常用）。
++
++        ``weight`` 默认为 ``time``（最快）；传 ``distance`` 可比较“最短里程”口径。
++        """
+         start_id = self.resolve_station(start)
+         end_id = self.resolve_station(end)
++        weight = resolve_weight(weight)
+ 
+         routes: dict[str, dict] = {}
+         for name in ALGORITHM_NAMES:
+-            routes[name] = self.route(start_id, end_id, algorithm=name)
++            routes[name] = self.route(start_id, end_id, algorithm=name, weight=weight)
+ 
+         dijkstra = routes["Dijkstra"]
+         astar = routes["A*"]
+@@ -415,6 +444,7 @@ class MetroNavigator:
+             "ok": True,
+             "start": self._station_ref(start_id),
+             "end": self._station_ref(end_id),
++            "weight": weight,
+             "algorithms": routes,
+             "highlights": highlights,
+         }
+@@ -444,6 +474,7 @@ class MetroNavigator:
+         payload: dict[str, Any] = {
+             "ok": True,
+             "algorithm": result.algorithm,
++            "weight": result.weight,
+             "found": bool(result.found),
+             "start": self._station_ref(result.start_id),
+             "end": self._station_ref(result.end_id),
+@@ -493,10 +524,13 @@ def quick_route(
+     end: Any,
+     *,
+     algorithm: str = "Dijkstra",
++    weight: str = "time",
+     data_path: str | os.PathLike[str] | None = None,
+ ) -> dict:
+     """一次性加载 + 求路径（适合脚本里只查一两条的场景）。"""
+-    return connect(data_path).route(start, end, algorithm=algorithm)
++    return connect(data_path).route(
++        start, end, algorithm=algorithm, weight=weight
++    )
+ 
+ 
+ def error_payload(exc: BaseException) -> dict:
+@@ -531,8 +565,10 @@ def _format_route(payload: dict) -> str:
+             f"（{payload.get('message') or '两站不连通'}）"
+         )
+     summary = payload["summary"]
++    weight_label = "最快" if payload.get("weight", "time") == "time" else "最短里程"
+     lines = [
+-        f"{payload['algorithm']}：{payload['start']['name']} → {payload['end']['name']}",
++        f"{payload['algorithm']}（{weight_label}）："
++        f"{payload['start']['name']} → {payload['end']['name']}",
+         f"  {summary['time_min']:.3f} 分钟 · {summary['distance_km']:.3f} km · "
+         f"换乘 {summary['transfers']} 次 · {summary['station_count']} 站 · "
+         f"扩展 {summary['expanded']} 个站台 · 算法 {summary['elapsed_ms']:.3f} ms",
+@@ -592,7 +628,9 @@ def _cmd_lines(nav: MetroNavigator, args: argparse.Namespace) -> int:
+ 
+ 
+ def _cmd_route(nav: MetroNavigator, args: argparse.Namespace) -> int:
+-    payload = nav.route(args.start, args.end, algorithm=args.algorithm)
++    payload = nav.route(
++        args.start, args.end, algorithm=args.algorithm, weight=args.weight
++    )
+     if args.json:
+         _print_json(payload)
+     else:
+@@ -601,7 +639,7 @@ def _cmd_route(nav: MetroNavigator, args: argparse.Namespace) -> int:
+ 
+ 
+ def _cmd_compare(nav: MetroNavigator, args: argparse.Namespace) -> int:
+-    payload = nav.compare(args.start, args.end)
++    payload = nav.compare(args.start, args.end, weight=args.weight)
+     if args.json:
+         _print_json(payload)
+         return 0
+@@ -673,12 +711,16 @@ def build_parser() -> argparse.ArgumentParser:
+     route.add_argument("--end", required=True, help="终点：站 ID 或站名")
+     route.add_argument("--algorithm", default="Dijkstra",
+                        help="Dijkstra（默认）/ A* / BFS，支持别名")
++    route.add_argument("--weight", default="time",
++                       help="优化目标：time=最快（默认）/ distance=最短里程")
+     route.add_argument("--json", action="store_true", help="输出 JSON")
+ 
+     compare = sub.add_parser("compare", help="三种算法对比")
+     _add_data_option(compare)
+     compare.add_argument("--start", required=True)
+     compare.add_argument("--end", required=True)
++    compare.add_argument("--weight", default="time",
++                         help="优化目标：time=最快（默认）/ distance=最短里程")
+     compare.add_argument("--json", action="store_true", help="输出 JSON")
+ 
+     export = sub.add_parser("export", help="导出路网 JSON（站点 + 线路 + 规模）")
+diff --git a/selfcheck.py b/selfcheck.py
+index e15937b..9c20f91 100644
+--- a/selfcheck.py
++++ b/selfcheck.py
+@@ -208,8 +208,24 @@ def check_astar() -> str:
+     _assert(abs(d.total_distance - a.total_distance) < 1e-6, "A* 与 Dijkstra 里程不同")
+     _assert(a.expanded <= d.expanded,
+             f"A* 扩展 {a.expanded} 个节点，反而多于 Dijkstra 的 {d.expanded} 个")
++    # 多准则口径（任务书 P01“基于距离/时间权重的 Dijkstra”）：
++    # 距离权重下 Dijkstra / A* 必须得到同一最短里程，且“最快”与“最短里程”
++    # 是两种不同准则——时间最优的路不一定是里程最短的路。
++    dd = solve(graph, "Dijkstra", "S040", "S095", weight="distance")
++    ad = solve(graph, "A*", "S040", "S095", weight="distance")
++    _validate_path(graph, dd, "Dijkstra(distance)")
++    _validate_path(graph, ad, "A*(distance)")
++    _assert(dd.weight == "distance" and ad.weight == "distance", "结果里的权重标记不对")
++    _assert(abs(dd.total_distance - ad.total_distance) < 1e-6,
++            "距离权重下 A* 与 Dijkstra 的最短里程不一致")
++    _assert(dd.total_distance <= d.total_distance + 1e-9,
++            f"距离权重路径 {dd.total_distance} km 反而长于时间权重路径 {d.total_distance} km")
++    _assert(d.total_time <= dd.total_time + 1e-9,
++            f"时间权重路径 {d.total_time} min 反而慢于距离权重路径 {dd.total_time} min")
+     return (f"同优 {d.total_time:.1f} min；扩展 A*={a.expanded} / "
+-            f"Dijkstra={d.expanded}（省 {d.expanded - a.expanded} 个）")
++            f"Dijkstra={d.expanded}（省 {d.expanded - a.expanded} 个）；"
++            f"距离权重同为 {dd.total_distance:.3f} km"
++            f"（时间最优 {d.total_distance:.3f} km）")
+ 
+ 
+ @check(5, "BFS 换乘次数最少", "算法")
+diff --git a/tests/__init__.py b/tests/__init__.py
+new file mode 100644
+index 0000000..4f0c8c6
+--- /dev/null
++++ b/tests/__init__.py
+@@ -0,0 +1,6 @@
++"""仓库测试包的初始化文件。
++
++存在这个文件后，``python -m unittest discover -s tests -t .`` 与
++``python -m unittest discover -s tests`` 两种命令都能把 ``tests`` 当作包导入；
++CI 与本地命令因此可以统一（见 `.github/workflows/selfcheck.yml`）。
++"""
+diff --git a/tests/test_api.py b/tests/test_api.py
+index c510e1e..dfe03ce 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -166,6 +166,36 @@ class NavigatorTests(unittest.TestCase):
+         with self.assertRaises(InvalidRequest):
+             self.nav.route(*PAIR, algorithm="")
+ 
++    def test_route_weight_distance(self) -> None:
++        """M1：distance 权重求最短里程，time 权重求最快，两者允许不同。"""
++        fastest = self.nav.route(*PAIR)
++        shortest = self.nav.route(*PAIR, weight="distance")
++        self.assertEqual(fastest["weight"], "time")
++        self.assertEqual(shortest["weight"], "distance")
++        self.assertLessEqual(
++            shortest["summary"]["distance_km"], fastest["summary"]["distance_km"]
++        )
++        self.assertGreaterEqual(
++            shortest["summary"]["time_min"], fastest["summary"]["time_min"]
++        )
++        alias = self.nav.route(*PAIR, weight="最短距离")
++        self.assertEqual(alias["weight"], "distance")
++        # 换乘边距离为 0：距离权重下里程不会比时间最优路径更长
++        self.assertTrue(shortest["found"])
++
++    def test_invalid_weight_raises(self) -> None:
++        with self.assertRaises(InvalidRequest):
++            self.nav.route(*PAIR, weight="toll")
++
++    def test_compare_weight_distance(self) -> None:
++        payload = self.nav.compare(*PAIR, weight="distance")
++        self.assertEqual(payload["weight"], "distance")
++        for name in ("Dijkstra", "A*", "BFS"):
++            self.assertEqual(payload["algorithms"][name]["weight"], "distance")
++        d = payload["algorithms"]["Dijkstra"]["summary"]["distance_km"]
++        a = payload["algorithms"]["A*"]["summary"]["distance_km"]
++        self.assertAlmostEqual(d, a, places=6)
++
+     def test_same_station_route(self) -> None:
+         payload = self.nav.route("S001", "S001")
+         self.assertTrue(payload["found"])
+@@ -333,6 +363,30 @@ class HttpApiTests(unittest.TestCase):
+         self.assertEqual(status, 200)
+         self.assertEqual(set(payload["algorithms"]), {"Dijkstra", "A*", "BFS"})
+ 
++    def test_route_weight_distance(self) -> None:
++        status, payload, _ = self.request(
++            f"/api/route?start={PAIR[0]}&end={PAIR[1]}&weight=distance"
++        )
++        self.assertEqual(status, 200)
++        self.assertEqual(payload["weight"], "distance")
++        self.assertLessEqual(payload["summary"]["distance_km"], EXPECTED_DISTANCE)
++
++    def test_post_route_weight(self) -> None:
++        status, payload, _ = self.request(
++            "/api/route",
++            method="POST",
++            payload={"start": "S001", "end": "S061", "weight": "distance"},
++        )
++        self.assertEqual(status, 200)
++        self.assertEqual(payload["weight"], "distance")
++
++    def test_invalid_weight_is_400(self) -> None:
++        status, payload, _ = self.request(
++            f"/api/route?start={PAIR[0]}&end={PAIR[1]}&weight=toll"
++        )
++        self.assertEqual(status, 400)
++        self.assertEqual(payload["error"]["code"], "INVALID_REQUEST")
++
+     def test_unknown_station_is_404(self) -> None:
+         status, payload, _ = self.request("/api/route?start=NOPE&end=S061")
+         self.assertEqual(status, 404)
+@@ -392,6 +446,16 @@ class CliTests(unittest.TestCase):
+         self.assertTrue(payload["found"])
+         self.assertAlmostEqual(payload["summary"]["time_min"], EXPECTED_TIME, places=5)
+ 
++    def test_route_weight_distance_json(self) -> None:
++        proc = self.run_cli(
++            "route", "--start", "S001", "--end", "S061",
++            "--weight", "distance", "--json",
++        )
++        self.assertEqual(proc.returncode, 0, proc.stderr)
++        payload = json.loads(proc.stdout)
++        self.assertEqual(payload["weight"], "distance")
++        self.assertLessEqual(payload["summary"]["distance_km"], EXPECTED_DISTANCE)
++
+     def test_info_json(self) -> None:
+         proc = self.run_cli("info", "--json")
+         self.assertEqual(proc.returncode, 0, proc.stderr)
+diff --git a/tests/test_contracts.py b/tests/test_contracts.py
+new file mode 100644
+index 0000000..88fbf9a
+--- /dev/null
++++ b/tests/test_contracts.py
+@@ -0,0 +1,269 @@
++"""跨组兼容与数据契约测试（对应外部评审 H1/H2/M1/L1）。
++
++覆盖点：
++* H1：画布能读 P1/P2 的 ``sid`` 字段，以及 dict 形式 stations 的 key 回退；
++* H2：``events`` 支持 ``(kind, sid)`` 元组 / 字典 / 纯 ID 列表三种写法；
++* M1：per-line ``speed_kmh`` 生效，``weight="distance"`` 与 ``time`` 结果不同但正确；
++* L1：JSON/TXT 里的重复站点/线路 ID 必须抛 ``DataFormatError``，不能静默覆盖。
++
++只依赖标准库；画布模块只 import tkinter，不创建窗口。
++"""
++
++from __future__ import annotations
++
++import json
++import sys
++import unittest
++from pathlib import Path
++from types import SimpleNamespace
++
++ROOT = Path(__file__).resolve().parent.parent
++if str(ROOT) not in sys.path:
++    sys.path.insert(0, str(ROOT))
++
++from core import DataFormatError, load_dataset, solve  # noqa: E402
++from ui.canvas import normalise_graph, normalise_result  # noqa: E402
++
++SMOKE = ROOT / "_smoke"
++
++
++# ----------------------------------------------------------------------
++# P1/P2 风格的假对象（字段名用 sid，而不是本项目当前的 id）
++# ----------------------------------------------------------------------
++class SidStation:
++    def __init__(self, sid: str, name: str, x: float, y: float) -> None:
++        self.sid = sid
++        self.name = name
++        self.x = x
++        self.y = y
++
++
++class SidLine:
++    def __init__(self, sid: str, name: str, stations: list[str]) -> None:
++        self.sid = sid
++        self.name = name
++        self.color = "#2563EB"
++        self.loop = False
++        self.stations = stations
++
++
++class SidGraph:
++    speed_kmh = 35.0
++    dwell_minutes = 0.6
++
++    def __init__(self) -> None:
++        self.stations = [
++            SidStation("S1", "甲", 0.0, 0.0),
++            SidStation("S2", "乙", 1.0, 0.0),
++            SidStation("S3", "丙", 2.0, 0.0),
++        ]
++        self.lines = [SidLine("L1", "一号线", ["S1", "S2", "S3"])]
++
++
++class FakeResult:
++    """任务书风格的结果：path/events 用 P2 的 (kind, sid) 写法。"""
++
++    def __init__(self, events: list, stations: list[str]) -> None:
++        self.found = True
++        self.algorithm = "Dijkstra"
++        self.path = stations
++        self.stations = stations
++        self.events = events
++        self.distance_km = 2.0
++        self.time_min = 4.0
++        self.transfers = 0
++        self.expanded = 2
++        self.message = "ok"
++
++
++class CanvasCompatTests(unittest.TestCase):
++    def test_graph_accepts_sid_field(self) -> None:
++        draw = normalise_graph(SidGraph())
++        self.assertEqual(sorted(draw.stations), ["S1", "S2", "S3"])
++        self.assertEqual(draw.stations["S1"].name, "甲")
++        self.assertEqual(len(draw.lines), 1)
++
++    def test_graph_dict_stations_falls_back_to_key(self) -> None:
++        graph = SimpleNamespace(
++            stations={
++                "S1": SimpleNamespace(name="甲", x=0.0, y=0.0),
++                "S2": SimpleNamespace(name="乙", x=1.0, y=0.0),
++            },
++            lines=[
++                SimpleNamespace(
++                    id="L1", name="一号线", color="#2563EB",
++                    loop=False, stations=["S1", "S2"],
++                )
++            ],
++        )
++        draw = normalise_graph(graph)
++        self.assertEqual(sorted(draw.stations), ["S1", "S2"])
++
++    def test_events_accept_kind_sid_tuples(self) -> None:
++        graph = SidGraph()
++        draw = normalise_graph(graph)
++        result = FakeResult(
++            events=[("settle", "S1"), ("settle", "S2"), ("push", "S3")],
++            stations=["S1", "S2", "S3"],
++        )
++        view = normalise_result(graph, draw, result)
++        self.assertEqual(view.events, ["S1", "S2", "S3"])
++        self.assertNotIn("settle", view.events)
++
++    def test_events_accept_dicts_and_plain_ids(self) -> None:
++        graph = SidGraph()
++        draw = normalise_graph(graph)
++        result = FakeResult(
++            events=[{"kind": "settle", "sid": "S1"}, "S2", ("S3", "L1")],
++            stations=["S1", "S2", "S3"],
++        )
++        view = normalise_result(graph, draw, result)
++        self.assertEqual(view.events, ["S1", "S2", "S3"])
++
++    def test_result_station_objects_with_sid(self) -> None:
++        graph = SidGraph()
++        draw = normalise_graph(graph)
++        result = FakeResult(events=[], stations=[])
++        result.stations = [SidStation("S1", "甲", 0, 0), SidStation("S2", "乙", 1, 0)]
++        view = normalise_result(graph, draw, result)
++        self.assertEqual(view.stations, ["S1", "S2"])
++
++
++class LoaderContractTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls) -> None:
++        SMOKE.mkdir(exist_ok=True)
++
++    def _write(self, name: str, payload: dict) -> Path:
++        path = SMOKE / name
++        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
++        return path
++
++    def test_duplicate_station_id_raises(self) -> None:
++        path = self._write("dup_station.json", {
++            "stations": [
++                {"id": "X", "name": "甲", "x": 0, "y": 0},
++                {"id": "X", "name": "乙", "x": 1, "y": 1},
++            ],
++            "lines": [{"id": "L1", "name": "线", "stations": ["X", "X"]}],
++        })
++        with self.assertRaises(DataFormatError) as ctx:
++            load_dataset(str(path))
++        self.assertIn("重复", str(ctx.exception))
++
++    def test_duplicate_line_id_raises(self) -> None:
++        path = self._write("dup_line.json", {
++            "stations": [
++                {"id": "A", "name": "甲", "x": 0, "y": 0},
++                {"id": "B", "name": "乙", "x": 1, "y": 0},
++            ],
++            "lines": [
++                {"id": "L1", "name": "线一", "stations": ["A", "B"]},
++                {"id": "L1", "name": "线二", "stations": ["A", "B"]},
++            ],
++        })
++        with self.assertRaises(DataFormatError):
++            load_dataset(str(path))
++
++    def test_duplicate_station_id_in_txt_raises(self) -> None:
++        path = SMOKE / "dup_station.txt"
++        path.write_text(
++            "CITY 测试\n"
++            "STATION,X,甲,0,0\n"
++            "STATION,X,乙,1,1\n"
++            "LINE,L1,线,#2563EB,0,X\n",
++            encoding="utf-8",
++        )
++        with self.assertRaises(DataFormatError):
++            load_dataset(str(path))
++
++    def test_per_line_speed_changes_ride_time(self) -> None:
++        path = self._write("per_line_speed.json", {
++            "meta": {"params": {"train_speed_kmh": 35.0, "dwell_minutes": 0.6}},
++            "stations": [
++                {"id": "A", "name": "甲", "x": 0, "y": 0},
++                {"id": "B", "name": "乙", "x": 1, "y": 0},
++                {"id": "C", "name": "丙", "x": 0, "y": 2},
++                {"id": "D", "name": "丁", "x": 1, "y": 2},
++            ],
++            "lines": [
++                {"id": "SLOW", "name": "慢线", "speed_kmh": 20.0,
++                 "stations": ["A", "B"]},
++                {"id": "FAST", "name": "快线", "speed_kmh": 60.0,
++                 "stations": ["C", "D"]},
++            ],
++        })
++        graph = load_dataset(str(path)).build_graph()
++        slow_time, slow_km = graph.segment("SLOW", "A", "B")
++        fast_time, fast_km = graph.segment("FAST", "C", "D")
++        self.assertAlmostEqual(slow_km, fast_km)
++        self.assertGreater(slow_time, fast_time)
++        self.assertAlmostEqual(graph.line_speed("SLOW"), 20.0)
++        self.assertAlmostEqual(graph.max_speed_kmh(), 60.0)
++        # 没有写 speed_kmh 的线路仍然回退到全网默认速度
++        self.assertAlmostEqual(graph.ride_time(1.0), 1.0 / 35.0 * 60 + 0.6)
++
++
++class WeightTests(unittest.TestCase):
++    """M1：time / distance 两种优化目标。"""
++
++    @classmethod
++    def setUpClass(cls) -> None:
++        path = SMOKE / "weight_case.json"
++        path.write_text(json.dumps({
++            "meta": {"params": {"train_speed_kmh": 35.0, "dwell_minutes": 0.6}},
++            "stations": [
++                {"id": "A", "name": "甲", "x": 0, "y": 0},
++                {"id": "B", "name": "乙", "x": 6, "y": 0},
++                {"id": "C", "name": "丙", "x": 3, "y": 4},
++                {"id": "D", "name": "丁", "x": 6, "y": 4},
++            ],
++            "lines": [
++                # 快线绕远（10 km）但更快：11.2 min
++                {"id": "L1", "name": "一号线", "speed_kmh": 60.0,
++                 "stations": ["A", "B", "D"]},
++                # 慢线更短（8 km）但更慢：约 14.9 min
++                {"id": "L2", "name": "二号线", "speed_kmh": 35.0,
++                 "stations": ["A", "C", "D"]},
++            ],
++        }, ensure_ascii=False), encoding="utf-8")
++        cls.graph = load_dataset(str(path)).build_graph()
++
++    def test_time_weight_returns_time_optimal(self) -> None:
++        fastest = solve(self.graph, "Dijkstra", "A", "D")
++        shortest = solve(self.graph, "Dijkstra", "A", "D", weight="distance")
++        self.assertEqual(fastest.weight, "time")
++        self.assertEqual(shortest.weight, "distance")
++        # 快线：6+4 km @60 km/h，两段各加 0.6 min 停站 = 6.6+4.6 = 11.2 min
++        self.assertAlmostEqual(fastest.total_time, 11.2, places=3)
++        self.assertAlmostEqual(fastest.total_distance, 10.0, places=3)
++        # 慢线更短（8 km）但更慢 => “最快”与“最短里程”确实不同
++        self.assertGreater(shortest.total_time, fastest.total_time)
++        self.assertLess(shortest.total_distance, fastest.total_distance)
++
++    def test_astar_matches_dijkstra_under_both_weights(self) -> None:
++        for weight in ("time", "distance"):
++            with self.subTest(weight=weight):
++                d = solve(self.graph, "Dijkstra", "A", "D", weight=weight)
++                a = solve(self.graph, "A*", "A", "D", weight=weight)
++                self.assertAlmostEqual(d.total_time, a.total_time, places=6)
++                self.assertAlmostEqual(d.total_distance, a.total_distance, places=6)
++
++    def test_weight_aliases(self) -> None:
++        z = solve(self.graph, "Dijkstra", "A", "D", weight="最短距离")
++        self.assertEqual(z.weight, "distance")
++        t = solve(self.graph, "Dijkstra", "A", "D", weight="时间")
++        self.assertEqual(t.weight, "time")
++        with self.assertRaises(ValueError):
++            solve(self.graph, "Dijkstra", "A", "D", weight="toll")
++
++    def test_bfs_weight_and_visited_order(self) -> None:
++        bfs = solve(self.graph, "BFS", "A", "D", weight="distance")
++        self.assertEqual(bfs.weight, "distance")
++        self.assertTrue(bfs.found)
++        self.assertGreaterEqual(len(bfs.visited_order), 2)
++        self.assertEqual(bfs.visited_order[0], "A")
++
++
++if __name__ == "__main__":
++    unittest.main(verbosity=2)
+diff --git a/tools/bench.py b/tools/bench.py
+index aac4a49..84bc17f 100644
+--- a/tools/bench.py
++++ b/tools/bench.py
+@@ -2,9 +2,18 @@
+ 
+ 用法
+ ----
+-    python tools/bench.py                 # 跑实验，写 CSV、Markdown、图 4-4
+-    python tools/bench.py --runs 9        # 每项重复 9 次取中位数
+-    python tools/bench.py --no-chart      # 只出表，不画图
++    python tools/bench.py                       # 默认只写 _smoke/，不碰入库产物
++    python tools/bench.py --update-docs         # 明确要求时才更新 docs/bench.csv 与图 4-4
++    python tools/bench.py --runs 9              # 每项重复 9 次取中位数
++    python tools/bench.py --no-chart            # 只出表，不画图
++
++为什么默认写 `_smoke/`？
++----------------------
++复跑 bench 会改变计时中位数（`docs/bench.csv` 里的 elapsed_ms 每次都不完全
++一样），而报告表 4-3 与 `tools/check_report.py` 都以 `docs/bench.csv` 为准。
++如果默认就覆盖入库文件，任何人跑一次实验都会让报告闸门变红（外部评审 M4）。
++因此默认输出到 `_smoke/`（已被 .gitignore 忽略）；只有显式加 `--update-docs`
++才更新 `docs/`，此时应同步重新生成报告。
+ 
+ 为什么用 Pillow 画图？
+ --------------------
+@@ -16,6 +25,7 @@
+ ----
+ * 每个 (起终点, 算法) 先热身跑 1 次，再计时 5 次取**中位数**，避免偶发卡顿；
+ * 结果里的 expanded 是 P2 的扩展站台数，直接反映搜索规模；
++* BFS 的 expanded 是“线路扩展帧”，与 Dijkstra/A* 的逐站台口径不同，不横比；
+ * 时间是算法内部 ``perf_counter()`` 的毫秒数，不含界面绘制。
+ """
+ 
+@@ -37,6 +47,7 @@ from core import load_dataset, solve  # noqa: E402
+ DATA = PROJECT_ROOT / "data" / "beijing_metro.json"
+ DOCS = PROJECT_ROOT / "docs"
+ FIG_DIR = DOCS / "figures"
++SMOKE = PROJECT_ROOT / "_smoke"
+ 
+ PAIRS = [
+     ("S001", "S061"),
+@@ -126,7 +137,8 @@ def summaries(rows: list[dict]) -> list[str]:
+         lines.append(
+             "扩展节点均值："
+             + "，".join(f"{name} {avg_expanded[name]:.1f}" for name in ALGORITHMS)
+-            + "。A* 借助直线距离启发函数，平均搜索规模最小。"
++            + "。A* 借助直线距离启发函数，在 Dijkstra/A* 两种“逐站台”算法中扩展最少；"
++            "BFS 的数字是“线路扩展帧”，口径不同，不参与横比（详见报告 4.6 节）。"
+         )
+         lines.append(
+             "单次寻路耗时中位数均值："
+@@ -260,13 +272,24 @@ def main(argv: list[str] | None = None) -> int:
+     parser = argparse.ArgumentParser(description="P4 对比实验")
+     parser.add_argument("--runs", type=int, default=5, help="每个组合计时次数（中位数）")
+     parser.add_argument("--no-chart", action="store_true", help="不画柱状图")
++    parser.add_argument(
++        "--update-docs", action="store_true",
++        help="更新 docs/bench.csv、docs/bench.md 与图 4-4（默认只写 _smoke/）",
++    )
+     args = parser.parse_args(argv)
+ 
+     rows = run_benchmark(args.runs)
+-    csv_path = DOCS / "bench.csv"
++    if args.update_docs:
++        out_dir, fig_dir = DOCS, FIG_DIR
++        print("[bench] 注意：--update-docs 会更新入库产物，请同步重新生成报告并跑 check_report")
++    else:
++        out_dir, fig_dir = SMOKE, SMOKE
++        print("[bench] 默认只写 _smoke/，不修改 docs/；需要更新报告数据时加 --update-docs")
++    out_dir.mkdir(parents=True, exist_ok=True)
++    csv_path = out_dir / "bench.csv"
+     write_csv(rows, csv_path)
+     table = markdown_table(rows)
+-    (DOCS / "bench.md").write_text(
++    (out_dir / "bench.md").write_text(
+         "# 对比实验原始表\n\n" + table + "\n\n" + "\n".join(f"- {line}" for line in summaries(rows)) + "\n",
+         encoding="utf-8",
+     )
+@@ -278,7 +301,7 @@ def main(argv: list[str] | None = None) -> int:
+     print(f"\nCSV：{csv_path}")
+ 
+     if not args.no_chart:
+-        chart_path = FIG_DIR / "fig4-4_expanded.png"
++        chart_path = fig_dir / "fig4-4_expanded.png"
+         draw_chart(rows, chart_path)
+         print(f"图 4-4：{chart_path}")
+     return 0
+diff --git a/tools/make_report.py b/tools/make_report.py
+index f706e0c..1f3f818 100644
+--- a/tools/make_report.py
++++ b/tools/make_report.py
+@@ -279,7 +279,7 @@ def build_report() -> Path:
+              "ui/canvas.py：ViewTransform + 线路/站点绘制"],
+             ["起终点选择", "下拉框选择，或在地图上左键/右键点选；缩放后仍能命中",
+              "ui/window.py + CanvasView.bind_click / hit_test"],
+-            ["最快路径", "以乘车时间 + 换乘时间为边权运行 Dijkstra",
++            ["最快路径", "以乘车时间 + 换乘时间为边权运行 Dijkstra，可切换为里程权重",
+              "core/algorithms.py：二叉堆实现"],
+             ["最少换乘", "以换乘次数为层数的 BFS，给出换乘站，并在同换乘次数下择优",
+              "bfs_min_transfers + 约束最短路"],
+@@ -344,15 +344,18 @@ def build_report() -> Path:
+     )
+     doc.p(
+         "乘车边权重按列车平均旅行速度与停站时间计算：t = d / v × 60 + t_dwell，其中 d 为"
+-        "两站间的欧几里得距离（km），v = 35 km/h，t_dwell = 0.6 min；换乘边权重取 4.0 min，"
+-        "用于近似站内步行与候车时间。路径总耗时等于所有乘车段与换乘段时间之和，总里程只"
+-        "累加乘车段距离。模型假设列车匀速、各线路速度相同、换乘时间固定，不模拟实时延误"
+-        "与车厢拥挤程度。"
++        "两站间的欧几里得距离（km），v 默认为 35 km/h，t_dwell = 0.6 min；换乘边权重取 4.0 min，"
++        "用于近似站内步行与候车时间。线路可在数据中单独声明 speed_kmh 以表达快线/慢线，"
++        "未声明时回退到全网默认速度，因此旧数据格式完全兼容。Dijkstra/A* 支持两种优化"
++        "目标：weight=time（默认，总耗时最短）与 weight=distance（总里程最短）；换乘边"
++        "里程为 0，距离权重只累加乘车段。路径总耗时等于所有乘车段与换乘段时间之和。"
++        "模型假设列车匀速、换乘时间固定，不模拟实时延误与车厢拥挤程度。"
+     )
+     doc.p(
+         "这样建模还有一个好处：A* 的启发函数可以直接复用同一份坐标与速度——"
+-        "h(n) = 直线距离(n, 终点) / v × 60，与边权使用同一套几何，因此可采纳性分析"
+-        "是自洽的（详见 3.2 节）。"
++        "h(n) = 直线距离(n, 终点) × 60 / v_max（v_max 为全网最高速度，保证不高估），"
++        "距离权重时 h(n) 直接取直线距离；两种启发函数都与边权使用同一套几何，"
++        "因此可采纳性分析是自洽的（详见 3.2 节）。"
+     )
+ 
+     doc.h2("数据来源与规模")
+@@ -575,7 +578,7 @@ def build_report() -> Path:
+         "整理异常处理策略，最后从分层视角概览系统实现与主界面。"
+     )
+ 
+-    doc.h2("Dijkstra 最短耗时算法")
++    doc.h2("Dijkstra 最短耗时 / 最短里程算法")
+     doc.p(
+         "Dijkstra 维护源点到各站台节点的最短距离估计 dist，并用优先队列按距离从小到大"
+         "取出站台节点。取出后对它的每条出边执行松弛（relaxation）：若经过当前站台节点"
+@@ -589,7 +592,7 @@ def build_report() -> Path:
+         "    if node 已被扩展: continue\n"
+         "    if node.station == 终点站: 回溯前驱，结束\n"
+         "    for edge in adjacency[node]:\n"
+-        "        nd = d + edge.time\n"
++        "        nd = d + weight(edge)      # weight=time 或 distance\n"
+         "        if nd < dist[edge.to] - ε:\n"
+         "            dist[edge.to] = nd\n"
+         "            prev[edge.to] = (node, edge.kind)\n"
+@@ -599,7 +602,7 @@ def build_report() -> Path:
+     doc.code(
+         "for edge in graph.adjacency[node]:\n"
+         "    nxt = (edge.to_station, edge.to_line)\n"
+-        "    new_dist = current_dist + edge.time\n"
++        "    new_dist = current_dist + _edge_cost(edge, weight)\n"
+         "    if new_dist < dist.get(nxt, math.inf) - 1e-12:\n"
+         "        dist[nxt] = new_dist\n"
+         "        prev[nxt] = (node, edge.kind)\n"
+@@ -613,31 +616,46 @@ def build_report() -> Path:
+         "复杂度：设站台节点数为 V、有向边数为 E，每个站台节点最多入堆多次，总时间为 "
+         "O((V+E) log V)，空间为 O(V+E)，用于存储邻接表、dist、prev 和堆。"
+     )
++    doc.p(
++        "多准则：实现没有把边权写死为时间，而是抽象为 weight 参数。weight=\"time\"（默认）"
++        "取 edge.time，得到最快路径；weight=\"distance\" 取 edge.distance，得到里程最短"
++        "路径；线路还可在数据中声明 speed_kmh 表达快线/慢线。两种目标的最优解允许不同："
++        "S001→S061 最快路径 79.6 min / 33.24 km，而最短里程路径 82.3 min / 33.22 km。"
++        "这正是任务书 P01“基于距离/时间权重的 Dijkstra”要求的口径，接口层也提供了 "
++        "weight 参数（详见 3.6 节与 docs/API接口说明.md）。"
++    )
+ 
+     doc.h2("A* 启发式搜索")
+     doc.p(
+         "A* 在 Dijkstra 的基础上为每个站台节点增加启发值 h(n)，按 f(n) = g(n) + h(n) 排序，"
+-        "其中 g(n) 是从起点到 n 的实际耗时，h(n) 是对 n 到终点剩余耗时的估计。本系统取 "
+-        "h(n) = 欧几里得距离(n, 终点) / v × 60，单位为分钟，v = 35 km/h 与所有乘车边"
+-        "使用的速度相同。"
++        "其中 g(n) 是从起点到 n 的实际代价，h(n) 是对 n 到终点剩余代价的估计。本系统取 "
++        "h(n) = 欧几里得距离(n, 终点) × 60 / v_max（v_max 为全网最高速度，含 per-line "
++        "speed_kmh），单位为分钟；距离权重下 h(n) 直接取直线距离（km）。"
+     )
+     doc.p(
+-        "可采纳性：对任意乘车边 (u, v)，其实际耗时 c(u,v) = d(u,v)/v×60 + t_dwell ≥ "
+-        "d(u,v)/v×60。由三角不等式 d(u, t) ≤ d(u, v) + d(v, t)，可得 h(u) ≤ h(v) + c(u,v)；"
+-        "换乘边距离为 0 而耗时为 4 min，同样满足 h(u) ≤ h(v) + 4。因此 h 是一致的，"
+-        "一致的启发函数一定可采纳，A* 不会高估剩余代价，仍能得到与 Dijkstra 相同的最优解。"
++        "可采纳性：对任意乘车边 (u, v)，其实际耗时 c(u,v) = d(u,v)/v_line×60 + t_dwell ≥ "
++        "d(u,v)/v_max×60。由三角不等式 d(u, t) ≤ d(u, v) + d(v, t)，可得 h(u) ≤ h(v) + c(u,v)；"
++        "换乘边距离为 0 而耗时为 4 min，同样满足 h(u) ≤ h(v) + 4。距离权重下 h 就是直线"
++        "距离，同样满足三角不等式。因此两种 h 都是一致的，一致的启发函数一定可采纳，"
++        "A* 不会高估剩余代价，仍能得到与 Dijkstra 相同的最优解。"
+     )
+     doc.p(
+         "界面上选择“启发式最快（A*）”时，路径总耗时与 Dijkstra 完全相同，但扩展的站台"
+         "节点明显减少：4.6 节的 5 对起终点中，A* 平均只扩展 76.8 个站台节点，而 Dijkstra "
+-        "需要 133.0 个。这说明欧几里得距离能有效地把搜索引向终点方向。"
++        "需要 133.0 个。这说明欧几里得距离能有效地把搜索引向终点方向；距离权重下 A* 与 "
++        "Dijkstra 的最短里程同样一致（自检第 04 项同时验证两种权重）。"
+     )
+     doc.code(
+         "def heuristic(self, station_id: str, target_id: str) -> float:\n"
+         "    \"\"\"直线距离 / 最高速度，换算成分钟（不会高估真实代价）。\"\"\"\n"
+-        "    return self.distance(station_id, target_id) / self.speed_kmh * 60.0\n"
++        "    return self.distance(station_id, target_id) / self.max_speed_kmh() * 60.0\n"
++        "\n"
++        "def heuristic_distance(self, station_id: str, target_id: str) -> float:\n"
++        "    \"\"\"距离权重下的启发函数：直线距离。\"\"\"\n"
++        "    return self.distance(station_id, target_id)\n"
+         "\n"
+-        "f = new_g + graph.heuristic(edge.to_station, end_id)\n"
++        "h = graph.heuristic(to, end) if weight == \"time\" else graph.heuristic_distance(to, end)\n"
++        "f = new_g + h\n"
+         "heapq.heappush(heap, (f, new_g, next(counter), nxt))",
+         title="代码 3-2  A* 启发函数与 f 值计算（core/algorithms.py 节选）",
+     )
+@@ -1000,8 +1018,10 @@ def build_report() -> Path:
+     doc.note(
+         f"注：扩展节点均值为 Dijkstra {avg_expand_d:.1f}、A* {avg_expand_a:.1f}、"
+         f"BFS {avg_expand_b:.1f}；单次寻路耗时中位数均值为 Dijkstra {avg_ms_d:.2f} ms、"
+-        f"A* {avg_ms_a:.2f} ms、BFS {avg_ms_b:.2f} ms。BFS 按整条线路扩展，"
+-        "与 Dijkstra/A* 的逐站台扩展不是同一计数口径。"
++        f"A* {avg_ms_a:.2f} ms、BFS {avg_ms_b:.2f} ms。BFS 的 expanded 记录的是分层 BFS "
++        "的“线路扩展帧”（一条线一次），且最终路径由第二阶段“最少换乘约束下的最短路”"
++        "给出；它与 Dijkstra/A* 的逐站台扩展不同源、不同口径，只用于了解搜索规模，"
++        "不参与横向大小比较。"
+     )
+     doc.p(
+         "表 4-3 对应的扩展节点数对比可以更直观地看出 A* 的剪枝效果，如图 4-4 所示。"
+@@ -1023,7 +1043,8 @@ def build_report() -> Path:
+         f"{max_drop[3]}（少 {(1 - max_drop[3] / max_drop[2]) * 100:.1f}%，{max_drop[1]}），"
+         f"最少从 {min_drop[2]} 降到 {min_drop[3]}"
+         f"（少 {(1 - min_drop[3] / min_drop[2]) * 100:.1f}%，{min_drop[1]}）。"
+-        "这说明直线距离启发函数既保持了最优性，又显著缩小了搜索空间。",
++        "这说明直线距离启发函数既保持了最优性，又显著缩小了搜索空间；"
++        "这里的“扩展最少”只针对 Dijkstra/A* 两种逐站台算法，BFS 的线路扩展口径不计入比较。",
+         indent=True,
+     )
+     doc.p(
+@@ -1104,14 +1125,18 @@ def build_report() -> Path:
+ 
+     doc.h2("三算法在效率、公平与可解释性上的差异")
+     doc.p(
+-        "效率上，Dijkstra 扩展最多但最稳；A* 用直线距离做启发，搜索规模平均少 42.3%，"
+-        "且因为启发函数可采纳，结果仍是最优；BFS 按线路扩展，扩展计数最少，但每次扩展要"
+-        "扫一条线，实际耗时不一定最低（实测中位数 0.33 ms，略高于 Dijkstra 的 0.27 ms）。"
++        "效率上，Dijkstra 扩展最多但最稳；A* 用直线距离做启发，在两种逐站台算法中搜索规模"
++        "平均少 42.3%，且因为启发函数可采纳，结果仍是最优；BFS 按线路扩展，扩展计数口径"
++        "不同（一条线一次），但每次扩展要扫一条线，实际耗时不一定最低（实测中位数 0.33 ms，"
++        "略高于 Dijkstra 的 0.27 ms）。"
+     )
+     doc.p(
+         "公平上，Dijkstra/A* 优化“总时间”，BFS 优化“换乘次数”，两者没有绝对优劣。"
+         f"慈寿寺→崇文门的例子说明少换乘可能多花 {alt_case.total_time - fast_case.total_time:.1f} "
+         "分钟；报告里不能简单说“BFS 更差”，而要说“准则不同、用户按偏好选择”。"
++        "同样，“最快”与“最短里程”也是两种准则：S001→S061 最快 79.6 min / 33.24 km，"
++        "而最短里程为 82.3 min / 33.22 km——任务书 P01 要求的距离/时间双权重正是为了"
++        "表达这种取舍。"
+     )
+     doc.p(
+         "可解释性上，Dijkstra 的“按代价从小到大扩展”最好讲；A* 需要额外解释启发函数不高估"
+@@ -1181,8 +1206,8 @@ def build_report() -> Path:
+         "输出格式：目前是静态 PNG/PS 快照，后续可支持导出 SVG、批量生成多组对比图。"
+     )
+     doc.bullet(
+-        "多准则：算法只支持“时间最短”和“换乘最少”两种准则，后续可加入“步行最少”"
+-        "“票价最低”等多权重，甚至做 Pareto 前沿。"
++        "多准则：算法已支持“时间最短”“里程最短”两种权重与“换乘最少”，也支持线路级"
++        "速度差异；后续可继续加入“步行最少”“票价最低”等权重，并做 Pareto 前沿分析。"
+     )
+     doc.bullet(
+         "算法可视化：当前动画是“搜索结果回放”，不是真正的算法过程可视化；如果要展示堆"
+@@ -1296,7 +1321,8 @@ def build_report() -> Path:
+         "[PASS] 03. Dijkstra 路径自洽（独立重算）  (算法, 2 ms)\n"
+         "        32 站 / 79.6 min / 33.2 km / 换乘 1 / 扩展 151\n"
+         "[PASS] 04. A* 与 Dijkstra 同优且扩展更少  (算法, 3 ms)\n"
+-        "        同优 68.6 min；扩展 A*=78 / Dijkstra=143（省 65 个）\n"
++        "        同优 68.6 min；扩展 A*=78 / Dijkstra=143（省 65 个）；"
++        "距离权重同为 28.605 km（时间最优 28.605 km）\n"
+         "[PASS] 05. BFS 换乘次数最少  (算法, 4 ms)\n"
+         "        BFS 换乘 1 次 / 79.6 min；Dijkstra 换乘 1 次 / 79.6 min\n"
+         "[PASS] 06. 边界：起终点相同  (边界, 2 ms)\n"
+diff --git a/tools/prepare_github.py b/tools/prepare_github.py
+index feb02db..74456e6 100644
+--- a/tools/prepare_github.py
++++ b/tools/prepare_github.py
+@@ -140,7 +140,10 @@ REQUIRED_FILES = [
+     "tools/serve_api.py",
+     # 可调用接口（P4 扩展）：SDK/CLI 文档与回归测试
+     "docs/API接口说明.md",
++    "docs/评审整改记录-2026-10-18.md",
++    "tests/__init__.py",
+     "tests/test_api.py",
++    "tests/test_contracts.py",
+ ]
+ 
+ # 报告交付物：由报告组并行产出，缺失只提醒、不判红（最终上传前建议 --strict）
+@@ -160,6 +163,7 @@ DOC_LINK_FILES = [
+     "CONTRIBUTING.md",
+     "docs/GitHub协作与上传指南.md",
+     "docs/API接口说明.md",
++    "docs/评审整改记录-2026-10-18.md",
+ ]
+ 
+ # .gitignore 必须覆盖的运行产物（做子串匹配）
+diff --git a/tools/serve_api.py b/tools/serve_api.py
+index 1198775..8cd88c6 100644
+--- a/tools/serve_api.py
++++ b/tools/serve_api.py
+@@ -20,9 +20,9 @@
+     GET  /api/stations          站点列表（?line=L1&query=苹果）
+     GET  /api/lines             线路列表
+     GET  /api/station?q=苹果园   单个站点详情
+-    GET  /api/route?start=..&end=..&algorithm=Dijkstra
+-    POST /api/route             JSON body: {"start": .., "end": .., "algorithm": ..}
+-    GET  /api/compare?start=..&end=..   三种算法对比
++    GET  /api/route?start=..&end=..&algorithm=Dijkstra&weight=time
++    POST /api/route             JSON body: {"start": .., "end": .., "algorithm": .., "weight": ..}
++    GET  /api/compare?start=..&end=..&weight=time   三种算法对比
+     OPTIONS *                   CORS 预检
+ 
+ 所有响应都是 UTF-8 JSON；可预期错误返回 ``{"ok": false, "error": {...}}``，
+@@ -64,9 +64,9 @@ ENDPOINTS: list[tuple[str, str, str]] = [
+     ("GET", "/api/stations", "站点列表（?line=&query=）"),
+     ("GET", "/api/lines", "线路列表"),
+     ("GET", "/api/station", "站点详情（?q=站名或ID）"),
+-    ("GET", "/api/route", "寻路（?start=&end=&algorithm=）"),
+-    ("POST", "/api/route", "寻路（JSON body）"),
+-    ("GET", "/api/compare", "三算法对比（?start=&end=）"),
++    ("GET", "/api/route", "寻路（?start=&end=&algorithm=&weight=）"),
++    ("POST", "/api/route", "寻路（JSON body，可带 weight）"),
++    ("GET", "/api/compare", "三算法对比（?start=&end=&weight=）"),
+ ]
+ 
+ 
+@@ -228,10 +228,18 @@ class ApiHandler(BaseHTTPRequestHandler):
+                     query.get("start"),
+                     query.get("end"),
+                     algorithm=query.get("algorithm") or "Dijkstra",
++                    weight=query.get("weight") or "time",
+                 ),
+             )
+         elif path == "/api/compare":
+-            self._send(200, nav.compare(query.get("start"), query.get("end")))
++            self._send(
++                200,
++                nav.compare(
++                    query.get("start"),
++                    query.get("end"),
++                    weight=query.get("weight") or "time",
++                ),
++            )
+         else:
+             self._send(
+                 404,
+@@ -265,7 +273,11 @@ class ApiHandler(BaseHTTPRequestHandler):
+         start = body.get("start", query.get("start"))
+         end = body.get("end", query.get("end"))
+         algorithm = body.get("algorithm", query.get("algorithm") or "Dijkstra")
+-        self._send(200, self.nav.route(start, end, algorithm=algorithm))
++        weight = body.get("weight", query.get("weight") or "time")
++        self._send(
++            200,
++            self.nav.route(start, end, algorithm=algorithm, weight=weight),
++        )
+ 
+ 
+ class _ThreadingServer(ThreadingHTTPServer):
+diff --git a/ui/canvas.py b/ui/canvas.py
+index fa836ab..af8e9c0 100644
+--- a/ui/canvas.py
++++ b/ui/canvas.py
+@@ -325,7 +325,12 @@ def _get(obj: object, *names: str, default=None):
+ 
+ 
+ def _as_station_id(item: object) -> str:
+-    """从字符串 / dict / 对象里取出站点 ID。"""
++    """从字符串 / dict / 对象里取出站点 ID。
++
++    兼容四种历史命名：``id``（本项目）、``station_id``、``sid``（P1/P2 的
++    《技术方案》§6 与 `docs/交接/P1-收到的口径.md` 用的是 sid）以及
++    ``station``（站台节点里“当前站点”的字段名）。
++    """
+     if item is None:
+         return ""
+     if isinstance(item, str):
+@@ -333,15 +338,45 @@ def _as_station_id(item: object) -> str:
+     if isinstance(item, (tuple, list)):  # P2 的站台节点常写成 (站点, 线路)
+         return str(item[0]) if item else ""
+     if isinstance(item, dict):
+-        return str(item.get("id") or item.get("station_id") or item.get("station") or "")
++        return str(
++            item.get("id")
++            or item.get("station_id")
++            or item.get("sid")
++            or item.get("station")
++            or ""
++        )
+     return str(
+         getattr(item, "id", None)
+         or getattr(item, "station_id", None)
++        or getattr(item, "sid", None)
+         or getattr(item, "station", None)
+         or ""
+     )
+ 
+ 
++#: 任务书/P2 的 ``events`` 常写成 ``(kind, sid)``；只有这些 kind 才按“事件”解析，
++#: 否则 ``("S1", "L1")`` 这类站台节点元组会被误读成事件。
++_EVENT_KINDS = frozenset(
++    {"settle", "visit", "visited", "push", "pop", "expand", "relax", "transfer", "ride"}
++)
++
++
++def _as_event_station(item: object) -> str:
++    """从一个动画事件里取出站点 ID，兼容任务书与 P2 的几种写法。
++
++    * ``"S1"``                             → ``S1``；
++    * ``("settle", "S1")``                 → ``S1``（任务书/P2 的 events）；
++    * ``{"kind": "settle", "sid": "S1"}``  → ``S1``；
++    * ``("S1", "L1")``                     → ``S1``（站台节点元组）。
++    """
++    if isinstance(item, (tuple, list)) and len(item) >= 2:
++        kind = str(item[0]).strip().lower()
++        if kind in _EVENT_KINDS:
++            return _as_station_id(item[1])
++        return _as_station_id(item[0])
++    return _as_station_id(item)
++
++
+ def _looks_like_feeder(line: object, name: str) -> bool:
+     """判断一条线是不是“接驳线/支线”，用于画虚线。
+ 
+@@ -367,13 +402,14 @@ def normalise_graph(graph: object) -> DrawGraph:
+ 
+     raw_stations = _get(graph, "stations", default={})
+     if isinstance(raw_stations, dict):
+-        station_iter: Iterable = raw_stations.values()
++        # dict 形式的 stations：允许“key 就是站点 ID、value 里没有 id 字段”
++        station_items: list[tuple[object | None, object]] = list(raw_stations.items())
+     else:
+-        station_iter = raw_stations or []
++        station_items = [(None, item) for item in (raw_stations or [])]
+ 
+     stations: dict[str, DrawStation] = {}
+-    for item in station_iter:
+-        sid = _as_station_id(item)
++    for key, item in station_items:
++        sid = _as_station_id(item) or (str(key) if key is not None else "")
+         if not sid:
+             continue
+         try:
+@@ -475,6 +511,9 @@ def normalise_result(graph: object, draw_graph: DrawGraph, result: object) -> Pa
+     兼容两套字段名：
+     * P2 当前实现：``stations / legs / total_distance / total_time / transfers``
+     * 任务书接口：``path / distance_km / time_min / events``
++
++    ``events`` 兼容 ``(kind, sid)`` 元组（任务书/P2 写法）、``{"kind":…, "sid":…}``
++    字典与纯站点 ID 列表三种形式；解析见 :func:`_as_event_station`。
+     """
+     if result is None:
+         return PathView(found=False, message="还没有搜索")
+@@ -543,7 +582,7 @@ def normalise_result(graph: object, draw_graph: DrawGraph, result: object) -> Pa
+     raw_events = _get(result, "events", "visited_order", "settle_events", "visited", default=[]) or []
+     events: list[str] = []
+     for event in raw_events:
+-        sid = _as_station_id(event)
++        sid = _as_event_station(event)
+         if sid:
+             events.append(sid)
+     if not events:
+@@ -854,6 +893,14 @@ class CanvasView(tk.Canvas):
+         self._transform.reset()
+         self._schedule_redraw(0)
+ 
++    def refresh(self) -> None:
++        """请求一次重画（公开方法，供 P3/宿主在数据或状态变化后调用）。
++
++        P3 不要直接调用私有的 ``_redraw``：它绕过了防抖与“是否正在动画”
++        的保护逻辑；``refresh()`` 走统一的调度入口，等价于安全的整图重绘。
++        """
++        self._schedule_redraw(0)
++
+     def export(self, path: str) -> str:
+         """导出当前画布。
+ 
+diff --git a/ui/window.py b/ui/window.py
+index 28db7de..42c73cd 100644
+--- a/ui/window.py
++++ b/ui/window.py
+@@ -313,7 +313,8 @@ class MetroNavWindow(tk.Tk):
+             f"{len(dataset.lines)} 条线路"
+         )
+         self.update_idletasks()
+-        self.canvas.after(150, self.canvas._redraw)
++        # 用画布公开方法 refresh()，不直接调私有的 _redraw（见 canvas.py::refresh）
++        self.canvas.after(150, self.canvas.refresh)
+         return True
+ 
+     def _fill_combos(self) -> None:
