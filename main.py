@@ -8,6 +8,7 @@
     python main.py --smoke _smoke/a.ps  # 界面冒烟 + 自动导出画布
     python main.py --smoke _smoke/a.png
     python main.py --data data/demo_city.json
+    python main.py --cli route --start 苹果园 --end 天通苑北   # 调用接口（等价 metro_api.py）
 
 设计说明
 --------
@@ -118,6 +119,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--smoke", nargs="?", const=DEFAULT_SMOKE, default=None,
                         metavar="图片路径",
                         help="界面冒烟并导出画布，默认 _smoke/smoke.png")
+    parser.add_argument("--cli", action="store_true",
+                        help="调用可调用接口命令行（其后参数原样转发，如 --cli route --start ...）")
     parser.add_argument("--version", action="store_true", help="打印版本信息")
     return parser
 
@@ -128,6 +131,16 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
+
+    # ``--cli`` 之后的内容属于 metro_api 的参数空间（子命令 + 选项），
+    # 在 argparse 之前截走并原样转发，例如：
+    #   python main.py --cli route --start 苹果园 --end 天通苑北 --json
+    args_list = list(sys.argv[1:] if argv is None else argv)
+    if "--cli" in args_list:
+        import metro_api  # 延迟导入：普通 GUI/自检路径不需要加载接口层
+
+        return metro_api.main(args_list[args_list.index("--cli") + 1:])
+
     parser = build_parser()
     args = parser.parse_args(argv)
 

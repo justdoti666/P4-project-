@@ -93,6 +93,7 @@ REQUIRED_FILES = [
     # 根目录：程序入口 + 运行说明 + 协作规范
     "main.py",
     "selfcheck.py",
+    "metro_api.py",
     "README.md",
     "CONTRIBUTING.md",
     "requirements.txt",
@@ -136,6 +137,10 @@ REQUIRED_FILES = [
     "tools/export_canvas.py",
     "tools/bench.py",
     "tools/record_demo.py",
+    "tools/serve_api.py",
+    # 可调用接口（P4 扩展）：SDK/CLI 文档与回归测试
+    "docs/API接口说明.md",
+    "tests/test_api.py",
 ]
 
 # 报告交付物：由报告组并行产出，缺失只提醒、不判红（最终上传前建议 --strict）
@@ -154,6 +159,7 @@ DOC_LINK_FILES = [
     "README.md",
     "CONTRIBUTING.md",
     "docs/GitHub协作与上传指南.md",
+    "docs/API接口说明.md",
 ]
 
 # .gitignore 必须覆盖的运行产物（做子串匹配）

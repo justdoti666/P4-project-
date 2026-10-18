@@ -48,6 +48,10 @@ jobs:
           python -c "import tkinter; print('Tk', tkinter.TkVersion)"
           python -c "from PIL import Image; print('Pillow', Image.__version__)"
 
+      # 可调用接口（Python SDK / CLI / HTTP）回归：纯标准库 unittest，无显示环境也能跑。
+      - name: 可调用接口测试（SDK / CLI / HTTP）
+        run: python -m unittest discover -s tests -v
+
       # CI 没有显示器：--no-gui 会跳过第 10 项 GUI 检查（前 9 项照常跑），
       # 失败时日志里能直接看到 [FAIL] 的红项和 detail。
       - name: 10 项自检（无显示环境，跳过第 10 项 GUI）

@@ -13,16 +13,19 @@
 ui/canvas.py          P4 核心：坐标变换 / 缩放拖拽 / 路径高亮 / 动画 / 导出（约 2000 行，含大量中文注释）
 ui/window.py          最小可运行窗口（P3 接口替身，只调用画布公开方法）
 selfcheck.py          10 项自检矩阵 + “改坏实现会变红”的判别力演示
+metro_api.py          可调用接口：Python SDK + CLI（无 Tk、零第三方依赖）
 CONTRIBUTING.md       协作规范：分支命名 / 提交信息 / 文件所有权 / PR / 审查 / 合并
 .github/              CI 自检闸门、PR/Issue 模板、CODEOWNERS
 tools/export_canvas.py 画布导出 PNG/PS + 报告插图一键生成
 tools/bench.py        5 对起终点 × 3 算法对比实验 + 图 4-4
 tools/record_demo.py  自动驱动真实窗口，录制演示 GIF（有 ffmpeg 时可转 MP4）
+tools/serve_api.py    本地 HTTP JSON 服务（REST，跨语言调用）
 tools/prepare_github.py 仓库体检 / 待上传清单 / zip 打包 / PR 描述生成
 tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
 data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
-docs/                 验收说明、GitHub 协作指南、报告素材、演示 GIF、bench.csv、插图
+docs/                 验收说明、GitHub 协作指南、API 说明、报告素材、演示 GIF、bench.csv、插图
 reports/              五章实验报告终稿 docx + PDF（目录已更新，可直接提交）
+tests/test_api.py     可调用接口回归（34 个 unittest 用例）
 ```
 
 最短验证命令（在项目根目录执行）：
@@ -30,6 +33,8 @@ reports/              五章实验报告终稿 docx + PDF（目录已更新，�
 ```powershell
 python main.py --check                         # 10 项自检，退出码 0/1
 python main.py --smoke _smoke/demo.ps          # 界面冒烟 + 导出画布
+python -m unittest discover -s tests -v        # 可调用接口回归（34 用例）
+python metro_api.py route --start 苹果园 --end 天通苑北 --json
 python tools/export_canvas.py docs/figures/my_route.png --demo
 python tools/record_demo.py                    # 自动录制演示 GIF
 python tools/prepare_github.py --check         # 仓库体检：协作文件 / CI / 禁止入库项
@@ -44,6 +49,9 @@ python tools/prepare_github.py --check         # 仓库体检：协作文件 / C
 | `python main.py --smoke _smoke/smoke.ps` | 加载→搜索→动画→跳过→导出成功 | 约 3.2 s |
 | `python tools/export_canvas.py ...` | 1400×900 PNG 导出成功 | 约 3.0 s |
 | `python tools/record_demo.py` | 自动录制 23 帧、1200×789 演示 GIF | 约 20 s |
+| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 34 个用例全部通过 | 约 2.5 s |
+| `python metro_api.py route ... --json` | 返回 JSON：79.575 min / 换乘 1 次 | < 0.5 s |
+| `python tools/serve_api.py --port 8765` | 9 个 HTTP 端点 + 404/400/CORS 冒烟通过 | 启动 < 1 s |
 | 打开 GUI（含 134 站绘制） | 窗口出现并可交互 | 约 1.6 s |
 
 ---
@@ -95,8 +103,9 @@ python tools/record_demo.py                    # 录演示 GIF（窗口会置顶
 
 ```text
 metro-p4/
-├─ main.py                    # 入口：GUI / --check / --smoke
+├─ main.py                    # 入口：GUI / --check / --smoke / --cli
 ├─ selfcheck.py               # 10 项自检 + 判别力演示
+├─ metro_api.py               # 可调用接口：Python SDK + CLI（无 Tk、零第三方依赖）
 ├─ CONTRIBUTING.md            # 协作规范：分支/提交/所有权/PR/审查/合并
 ├─ .github/                   # CI 自检、PR/Issue 模板、CODEOWNERS
 ├─ .gitattributes             # 换行统一（文本 LF、ps1/bat CRLF、二进制标记）
@@ -113,6 +122,7 @@ metro-p4/
 │  ├─ export_canvas.py        # 画布 → PNG/PS
 │  ├─ bench.py                # 对比实验 + 图 4-4
 │  ├─ record_demo.py          # 自动录演示 GIF / 可选 MP4
+│  ├─ serve_api.py            # 本地 HTTP JSON 服务（REST，跨语言调用）
 │  ├─ prepare_github.py       # 仓库体检 / manifest / zip 打包 / PR 描述
 │  ├─ make_report.py          # 五章报告 docx 生成
 │  ├─ check_report.py         # 报告统稿检查（退出码闸门）
@@ -125,6 +135,7 @@ metro-p4/
 │  └─ disconnected_4.json     # 两个不连通分量
 ├─ docs/
 │  ├─ P4-验收与交接.md        # 5 条验收逐项证据
+│  ├─ API接口说明.md          # Python SDK / CLI / HTTP 接口说明（JSON/错误码/FAQ）
 │  ├─ GitHub协作与上传指南.md # 建仓 / 保护 main / 邀请组员 / PR / tag / FAQ
 │  ├─ P4-报告章节草稿.md      # 4.5–4.7 + 第 5 章素材（终稿已并入 reports/）
 │  ├─ P4-报告统稿模板与检查表.md # 五章合并、图表编号、术语统一
@@ -136,6 +147,8 @@ metro-p4/
 ├─ reports/
 │  ├─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿（源文件，可用脚本重新生成）
 │  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（34 页，目录已更新，可直接提交）
+├─ tests/
+│  └─ test_api.py             # 可调用接口回归（34 个用例：SDK/CLI/HTTP）
 ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
 ├─ run.ps1 / run.bat          # 启动脚本
 └─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
@@ -410,6 +423,7 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 * **P1/P2**：`core/` 是只读依赖，P4 没有改算法和数据格式；
 * **P3**：`ui/window.py` 只是最小替身，正式按钮逻辑由 P3 接到 `CanvasView` 的公开方法上；
 * **P4 自己的文件**：`ui/canvas.py`、`selfcheck.py`、`tools/export_canvas.py`、`tools/bench.py`、`tools/record_demo.py`、`README.md`、`docs/`；
+* **接口层（P4 扩展）**：`metro_api.py` / `tools/serve_api.py` 是不打开窗口的调用层，只读 `core`，不参与 UI 分工；
 * 限制 1：密集路网会自动省略部分站名/分段标注（放大恢复），这是为了保证“不重叠”；
 * 限制 2：PNG 导出依赖可见窗口（截图方案），PS 是矢量、不受影响；
 * 限制 3：BFS 的 `expanded` 计数口径与 Dijkstra/A* 不同，对比实验已在图注中说明；
@@ -444,6 +458,13 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 * [`docs/bench.md`](docs/bench.md) / [`docs/bench.csv`](docs/bench.csv) —— 对比实验原始表与数据
 * [`docs/figures/`](docs/figures/) —— 报告插图（`report/` 下为报告专用插图）
 
+### 11.4 可调用接口
+
+* [`docs/API接口说明.md`](docs/API接口说明.md) —— Python SDK / CLI / HTTP 三套调用的完整说明
+* [`metro_api.py`](metro_api.py) —— `connect()` / `MetroNavigator` / 命令行入口
+* [`tools/serve_api.py`](tools/serve_api.py) —— 本地 HTTP JSON 服务（零第三方依赖）
+* [`tests/test_api.py`](tests/test_api.py) —— 34 个接口回归用例
+
 ---
 
 ## 12. GitHub 协作与上传
@@ -458,7 +479,8 @@ CI 配置见 [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml
 在 `ubuntu-latest + Python 3.12` 上跑两道闸门：
 
 * `python main.py --check --no-gui` —— 无显示环境跳过第 10 项 GUI，前 9 项必须全绿；
-* `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`。
+* `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`；
+* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）34 个用例。
 
 push / PR 到 `main` 自动触发；失败时 Actions 日志里能直接看到 `[FAIL]` 红项与 detail。
 
@@ -491,4 +513,31 @@ Issue（任务卡）→ 分支 feat/p1-data 等 → 本地自检
 * 分支命名、提交信息、文件所有权、合并前闸门：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 * 建仓、保护 `main`、邀请组员、打 `v1.0.0` tag、常见问题：[`docs/GitHub协作与上传指南.md`](docs/GitHub协作与上传指南.md)
 * 装好 remote 后，`python tools/prepare_github.py --pr-body` 可以直接生成 PR 描述。
+
+---
+
+## 13. 可调用接口（给同学 / 外部程序用）
+
+除了 `CanvasView`（界面组件），项目还提供一层**不打开窗口**的调用接口，
+适合批处理、脚本化演示、前端联调；与界面共用同一份 `core.solve`，数值口径完全一致。
+
+```python
+from metro_api import connect
+
+nav = connect()                                        # 默认 134 站北京路网
+print(nav.route("苹果园", "天通苑北")["summary"])        # 79.575 min / 33.236 km / 换乘 1
+print(nav.compare("慈寿寺", "崇文门")["highlights"])     # 三算法差异摘要
+```
+
+```powershell
+python metro_api.py route --start S001 --end S061 --json
+python metro_api.py compare --start S001 --end S061
+python main.py --cli info                              # 等价入口
+python tools/serve_api.py --port 8765                  # HTTP：GET /api/route?start=..&end=..
+python -m unittest discover -s tests -v                # 34 个接口回归用例
+```
+
+* 完整文档（方法 / JSON 结构 / 端点 / 错误码 / FAQ）：[`docs/API接口说明.md`](docs/API接口说明.md)
+* 设计约束：不依赖 Tkinter、零第三方依赖、只读 `core`、JSON 友好、可多线程共享；
+* 安全提示：HTTP 服务默认只绑定 `127.0.0.1`，没有鉴权/TLS，不要直接暴露到公网。
 
