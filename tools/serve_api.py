@@ -149,6 +149,29 @@ class ApiHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    def _method_not_allowed(self) -> None:
+        """只承诺 GET/POST/OPTIONS；其他方法也返回统一 JSON，而不是默认 501 HTML。"""
+        self._send(
+            405,
+            {
+                "ok": False,
+                "error": {
+                    "code": "METHOD_NOT_ALLOWED",
+                    "message": f"不支持的方法：{self.command}（仅支持 GET / POST / OPTIONS）",
+                },
+            },
+            headers={"Allow": "GET, POST, OPTIONS"},
+        )
+
+    def do_PUT(self) -> None:  # noqa: N802
+        self._method_not_allowed()
+
+    def do_DELETE(self) -> None:  # noqa: N802
+        self._method_not_allowed()
+
+    def do_PATCH(self) -> None:  # noqa: N802
+        self._method_not_allowed()
+
     def do_HEAD(self) -> None:  # noqa: N802
         self.do_GET()
 
@@ -268,6 +291,14 @@ def create_server(
     return _ThreadingServer((host, port), ApiHandler, nav=nav, quiet=quiet)
 
 
+def _display_data_path(nav: MetroNavigator) -> str:
+    """启动横幅优先显示仓库内相对路径，避免把本机绝对路径打印到演示屏幕。"""
+    try:
+        return str(Path(nav.data_path).resolve().relative_to(PROJECT_ROOT))
+    except (ValueError, OSError):
+        return Path(nav.data_path).name
+
+
 def serve(
     nav: MetroNavigator,
     host: str = "127.0.0.1",
@@ -281,7 +312,7 @@ def serve(
     if not quiet:
         print("城市交通路径导航系统 · HTTP API")
         print(f"  监听  http://{actual_host}:{actual_port}")
-        print(f"  路网  {nav.city}（{nav.data_path}）")
+        print(f"  路网  {nav.city}（{_display_data_path(nav)}）")
         print("  端点：")
         for method, route, desc in ENDPOINTS:
             print(f"    {method:<6} {route:<46} {desc}")

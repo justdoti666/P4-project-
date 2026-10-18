@@ -48,6 +48,8 @@ INVALID_REQUEST     400     参数缺失/类型不对（如没给 start）
 DATA_ERROR          422     数据文件找不到或格式错误
 STATION_NOT_FOUND   404     起点/终点查不到
 ALGORITHM_NOT_FOUND 400     算法名不认识（可用 Dijkstra / A* / BFS 及别名）
+NOT_FOUND           404     HTTP 端点不存在（仅 HTTP 层）
+METHOD_NOT_ALLOWED  405     HTTP 方法不支持，只接受 GET/POST/OPTIONS（仅 HTTP 层）
 INTERNAL_ERROR      500     未预期异常（属于 bug，请附日志提 Issue）
 ==================  ======  ==================================================
 """
@@ -653,7 +655,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     info = sub.add_parser("info", help="路网规模与参数")
     _add_data_option(info)
-    info.add_argument("--json", action="store_true", help="输出单行 JSON")
+    info.add_argument("--json", action="store_true", help="输出 JSON")
 
     stations = sub.add_parser("stations", help="站点列表 / 搜索")
     _add_data_option(stations)

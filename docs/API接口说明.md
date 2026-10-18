@@ -189,6 +189,8 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
 约定：
 
 * 响应统一 `Content-Type: application/json; charset=utf-8`，并带 `X-API-Version`；
+* 不支持的方法（PUT/DELETE/PATCH）返回 **405 JSON**（`METHOD_NOT_ALLOWED`，带 `Allow` 头），
+  不会出现框架默认的 501 HTML；
 * 错误统一 `{"ok": false, "error": {"code": ..., "message": ...}}`；
 * 请求体上限 1 MB；POST 时 query 参数可作为兜底（JSON body 优先）；
 * 该服务面向本地演示/联调，**没有鉴权与 TLS**，不要直接暴露到公网。
@@ -202,6 +204,7 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
 | `STATION_NOT_FOUND` | 404 | 起点/终点查不到 |
 | `DATA_ERROR` | 422 | 数据文件缺失或格式错误（启动时） |
 | `NOT_FOUND` | 404 | 端点不存在 |
+| `METHOD_NOT_ALLOWED` | 405 | 使用了不支持的 HTTP 方法（仅 GET/POST/OPTIONS） |
 | `INTERNAL_ERROR` | 500 | 未预期异常（BUG，请附日志提 Issue） |
 
 ## 5. 错误与异常（Python 侧）

@@ -364,6 +364,13 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(status, 204)
         self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
 
+    def test_unsupported_method_is_405_json(self) -> None:
+        """PUT/DELETE 等不支持的方法也要返回统一 JSON，而不是默认 501 HTML。"""
+        status, payload, headers = self.request("/api/route", method="PUT")
+        self.assertEqual(status, 405)
+        self.assertEqual(payload["error"]["code"], "METHOD_NOT_ALLOWED")
+        self.assertEqual(headers["Allow"], "GET, POST, OPTIONS")
+
 
 class CliTests(unittest.TestCase):
     """命令行：route / info / 错误退出码。"""
