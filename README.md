@@ -25,7 +25,7 @@ tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
 data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
 docs/                 验收说明、GitHub 协作指南、API 说明、报告素材、演示 GIF、bench.csv、插图
 reports/              五章实验报告终稿 docx + PDF（目录已更新，可直接提交）
-tests/test_api.py     可调用接口回归（34 个 unittest 用例）
+tests/test_api.py     可调用接口回归（35 个 unittest 用例）
 ```
 
 最短验证命令（在项目根目录执行）：
@@ -33,7 +33,7 @@ tests/test_api.py     可调用接口回归（34 个 unittest 用例）
 ```powershell
 python main.py --check                         # 10 项自检，退出码 0/1
 python main.py --smoke _smoke/demo.ps          # 界面冒烟 + 导出画布
-python -m unittest discover -s tests -v        # 可调用接口回归（34 用例）
+python -m unittest discover -s tests -v        # 可调用接口回归（35 用例）
 python metro_api.py route --start 苹果园 --end 天通苑北 --json
 python tools/export_canvas.py docs/figures/my_route.png --demo
 python tools/record_demo.py                    # 自动录制演示 GIF
@@ -49,7 +49,7 @@ python tools/prepare_github.py --check         # 仓库体检：协作文件 / C
 | `python main.py --smoke _smoke/smoke.ps` | 加载→搜索→动画→跳过→导出成功 | 约 3.2 s |
 | `python tools/export_canvas.py ...` | 1400×900 PNG 导出成功 | 约 3.0 s |
 | `python tools/record_demo.py` | 自动录制 23 帧、1200×789 演示 GIF | 约 20 s |
-| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 34 个用例全部通过 | 约 2.5 s |
+| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 35 个用例全部通过 | 约 2.5 s |
 | `python metro_api.py route ... --json` | 返回 JSON：79.575 min / 换乘 1 次 | < 0.5 s |
 | `python tools/serve_api.py --port 8765` | 9 个 HTTP 端点 + 404/400/CORS 冒烟通过 | 启动 < 1 s |
 | 打开 GUI（含 134 站绘制） | 窗口出现并可交互 | 约 1.6 s |
@@ -148,7 +148,7 @@ metro-p4/
 │  ├─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿（源文件，可用脚本重新生成）
 │  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（34 页，目录已更新，可直接提交）
 ├─ tests/
-│  └─ test_api.py             # 可调用接口回归（34 个用例：SDK/CLI/HTTP）
+│  └─ test_api.py             # 可调用接口回归（35 个用例：SDK/CLI/HTTP）
 ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
 ├─ run.ps1 / run.bat          # 启动脚本
 └─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
@@ -463,24 +463,24 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 * [`docs/API接口说明.md`](docs/API接口说明.md) —— Python SDK / CLI / HTTP 三套调用的完整说明
 * [`metro_api.py`](metro_api.py) —— `connect()` / `MetroNavigator` / 命令行入口
 * [`tools/serve_api.py`](tools/serve_api.py) —— 本地 HTTP JSON 服务（零第三方依赖）
-* [`tests/test_api.py`](tests/test_api.py) —— 34 个接口回归用例
+* [`tests/test_api.py`](tests/test_api.py) —— 35 个接口回归用例
 
 ---
 
 ## 12. GitHub 协作与上传
 
-### 12.1 CI 徽章（占位，首次 push 后生效）
+### 12.1 CI 徽章
 
-仓库建好后，把下面 URL 里的 `YOUR-GITHUB-NAME` 换成实际 GitHub 用户名/组织名，徽章会自动显示最新一次 CI 结果：
+仓库已上线：<https://github.com/zihinchew-svg/P4-project->。徽章显示最新一次 CI 结果：
 
-[![自检闸门](https://github.com/YOUR-GITHUB-NAME/metro-p4/actions/workflows/selfcheck.yml/badge.svg)](https://github.com/YOUR-GITHUB-NAME/metro-p4/actions/workflows/selfcheck.yml)
+[![自检闸门](https://github.com/zihinchew-svg/P4-project-/actions/workflows/selfcheck.yml/badge.svg)](https://github.com/zihinchew-svg/P4-project-/actions/workflows/selfcheck.yml)
 
 CI 配置见 [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml)，
-在 `ubuntu-latest + Python 3.12` 上跑两道闸门：
+在 `ubuntu-latest + Python 3.12` 上跑三道闸门：
 
 * `python main.py --check --no-gui` —— 无显示环境跳过第 10 项 GUI，前 9 项必须全绿；
 * `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`；
-* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）34 个用例。
+* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）35 个用例。
 
 push / PR 到 `main` 自动触发；失败时 Actions 日志里能直接看到 `[FAIL]` 红项与 detail。
 
@@ -495,13 +495,14 @@ python tools/prepare_github.py --pr-body    # dist/PR_BODY.md：改动摘要 / �
 python tools/prepare_github.py --all        # check + manifest + bundle + pr-body
 ```
 
-首次上传（管理员执行一次；会改 remote 的命令默认不自动跑）：
+首次上传已完成（2026-10-18，`main` 已跟踪 `origin/main`）：
 
 ```powershell
-python tools/prepare_github.py --check --strict
-python tools/prepare_github.py --remote https://github.com/YOUR-GITHUB-NAME/metro-p4.git
-python tools/prepare_github.py --push
+git remote -v        # origin -> https://github.com/zihinchew-svg/P4-project-.git
+git push             # 日常推送
 ```
+
+换新仓库时仍可用 `python tools/prepare_github.py --remote <URL>` + `--push`。
 
 ### 12.3 最小协作流程
 
@@ -534,7 +535,7 @@ python metro_api.py route --start S001 --end S061 --json
 python metro_api.py compare --start S001 --end S061
 python main.py --cli info                              # 等价入口
 python tools/serve_api.py --port 8765                  # HTTP：GET /api/route?start=..&end=..
-python -m unittest discover -s tests -v                # 34 个接口回归用例
+python -m unittest discover -s tests -v                # 35 个接口回归用例
 ```
 
 * 完整文档（方法 / JSON 结构 / 端点 / 错误码 / FAQ）：[`docs/API接口说明.md`](docs/API接口说明.md)

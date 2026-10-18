@@ -16,7 +16,7 @@ git switch -c feat/p4-canvas               # 开自己的分支（命名见 §2�
 # ……改代码……
 python main.py --check                     # 必须 10/10 绿
 python selfcheck.py --mutation-demo        # 必须 3 个 [CAUGHT]
-python -m unittest discover -s tests -v    # 接口回归：34 个用例必须全过
+python -m unittest discover -s tests -v    # 接口回归：35 个用例必须全过
 git add -A
 git commit -m "feat: 画布支持 4 倍速回放"
 git push -u origin feat/p4-canvas          # 首次推这个分支
