@@ -166,6 +166,36 @@ class NavigatorTests(unittest.TestCase):
         with self.assertRaises(InvalidRequest):
             self.nav.route(*PAIR, algorithm="")
 
+    def test_route_weight_distance(self) -> None:
+        """M1：distance 权重求最短里程，time 权重求最快，两者允许不同。"""
+        fastest = self.nav.route(*PAIR)
+        shortest = self.nav.route(*PAIR, weight="distance")
+        self.assertEqual(fastest["weight"], "time")
+        self.assertEqual(shortest["weight"], "distance")
+        self.assertLessEqual(
+            shortest["summary"]["distance_km"], fastest["summary"]["distance_km"]
+        )
+        self.assertGreaterEqual(
+            shortest["summary"]["time_min"], fastest["summary"]["time_min"]
+        )
+        alias = self.nav.route(*PAIR, weight="最短距离")
+        self.assertEqual(alias["weight"], "distance")
+        # 换乘边距离为 0：距离权重下里程不会比时间最优路径更长
+        self.assertTrue(shortest["found"])
+
+    def test_invalid_weight_raises(self) -> None:
+        with self.assertRaises(InvalidRequest):
+            self.nav.route(*PAIR, weight="toll")
+
+    def test_compare_weight_distance(self) -> None:
+        payload = self.nav.compare(*PAIR, weight="distance")
+        self.assertEqual(payload["weight"], "distance")
+        for name in ("Dijkstra", "A*", "BFS"):
+            self.assertEqual(payload["algorithms"][name]["weight"], "distance")
+        d = payload["algorithms"]["Dijkstra"]["summary"]["distance_km"]
+        a = payload["algorithms"]["A*"]["summary"]["distance_km"]
+        self.assertAlmostEqual(d, a, places=6)
+
     def test_same_station_route(self) -> None:
         payload = self.nav.route("S001", "S001")
         self.assertTrue(payload["found"])
@@ -333,6 +363,30 @@ class HttpApiTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(set(payload["algorithms"]), {"Dijkstra", "A*", "BFS"})
 
+    def test_route_weight_distance(self) -> None:
+        status, payload, _ = self.request(
+            f"/api/route?start={PAIR[0]}&end={PAIR[1]}&weight=distance"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["weight"], "distance")
+        self.assertLessEqual(payload["summary"]["distance_km"], EXPECTED_DISTANCE)
+
+    def test_post_route_weight(self) -> None:
+        status, payload, _ = self.request(
+            "/api/route",
+            method="POST",
+            payload={"start": "S001", "end": "S061", "weight": "distance"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["weight"], "distance")
+
+    def test_invalid_weight_is_400(self) -> None:
+        status, payload, _ = self.request(
+            f"/api/route?start={PAIR[0]}&end={PAIR[1]}&weight=toll"
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error"]["code"], "INVALID_REQUEST")
+
     def test_unknown_station_is_404(self) -> None:
         status, payload, _ = self.request("/api/route?start=NOPE&end=S061")
         self.assertEqual(status, 404)
@@ -391,6 +445,16 @@ class CliTests(unittest.TestCase):
         payload = json.loads(proc.stdout)
         self.assertTrue(payload["found"])
         self.assertAlmostEqual(payload["summary"]["time_min"], EXPECTED_TIME, places=5)
+
+    def test_route_weight_distance_json(self) -> None:
+        proc = self.run_cli(
+            "route", "--start", "S001", "--end", "S061",
+            "--weight", "distance", "--json",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["weight"], "distance")
+        self.assertLessEqual(payload["summary"]["distance_km"], EXPECTED_DISTANCE)
 
     def test_info_json(self) -> None:
         proc = self.run_cli("info", "--json")

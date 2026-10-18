@@ -12,12 +12,14 @@ P4（渲染与工程化）不修改这里的任何逻辑，只是**调用**它�
 
 from .algorithms import (
     ALGORITHMS,
+    WEIGHTS,
     Leg,
     RouteResult,
     astar,
     bfs_min_transfers,
     compare_algorithms,
     dijkstra,
+    normalise_weight,
     solve,
 )
 from .graph import Edge, MetroGraph, MetroLine, Station
@@ -33,10 +35,12 @@ __all__ = [
     "MetroLine",
     "RouteResult",
     "Station",
+    "WEIGHTS",
     "astar",
     "bfs_min_transfers",
     "compare_algorithms",
     "dijkstra",
     "load_dataset",
+    "normalise_weight",
     "solve",
 ]

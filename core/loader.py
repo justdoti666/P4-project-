@@ -99,20 +99,33 @@ def _load_json(path: str) -> MetroDataset:
             raise DataFormatError(
                 f"站点记录不完整或坐标不是数字：{item}"
             ) from exc
+        if station.id in stations:
+            raise DataFormatError(
+                f"站点 ID 重复：{station.id}（JSON stations 中出现了多次，"
+                "请改成唯一 ID）"
+            )
         stations[station.id] = station
 
     lines: dict[str, MetroLine] = {}
     for item in payload.get("lines", []):
         try:
+            raw_speed = item.get("speed_kmh")
+            if raw_speed is not None:
+                raw_speed = float(raw_speed)
+                if raw_speed <= 0:
+                    raise ValueError(f"线路 speed_kmh 必须为正数：{raw_speed}")
             line = MetroLine(
                 id=str(item["id"]).strip(),
                 name=str(item["name"]).strip(),
                 color=str(item.get("color", "#7F8C8D")),
                 loop=bool(item.get("loop", False)),
                 stations=tuple(str(s).strip() for s in item["stations"]),
+                speed_kmh=raw_speed,
             )
-        except (KeyError, TypeError) as exc:
-            raise DataFormatError(f"线路记录不完整：{item}") from exc
+        except (KeyError, TypeError, ValueError) as exc:
+            raise DataFormatError(f"线路记录不完整或 speed_kmh 非法：{item}") from exc
+        if line.id in lines:
+            raise DataFormatError(f"线路 ID 重复：{line.id}（JSON lines 中出现了多次）")
         lines[line.id] = line
 
     return MetroDataset(
@@ -183,6 +196,10 @@ def _load_txt(path: str) -> MetroDataset:
                 raise DataFormatError(
                     f"第 {line_no} 行站点坐标不是数字：{text}"
                 ) from exc
+            if station.id in stations:
+                raise DataFormatError(
+                    f"第 {line_no} 行站点 ID 重复：{station.id}"
+                )
             stations[station.id] = station
         elif keyword == "LINE":
             if len(parts) < 7:
@@ -196,6 +213,8 @@ def _load_txt(path: str) -> MetroDataset:
                 loop=parts[4] == "1",
                 stations=tuple(parts[5:]),
             )
+            if line.id in lines:
+                raise DataFormatError(f"第 {line_no} 行线路 ID 重复：{line.id}")
             lines[line.id] = line
         else:
             raise DataFormatError(f"第 {line_no} 行无法识别的记录：{parts[0]}")

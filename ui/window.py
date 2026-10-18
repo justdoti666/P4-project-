@@ -313,7 +313,8 @@ class MetroNavWindow(tk.Tk):
             f"{len(dataset.lines)} 条线路"
         )
         self.update_idletasks()
-        self.canvas.after(150, self.canvas._redraw)
+        # 用画布公开方法 refresh()，不直接调私有的 _redraw（见 canvas.py::refresh）
+        self.canvas.after(150, self.canvas.refresh)
         return True
 
     def _fill_combos(self) -> None:

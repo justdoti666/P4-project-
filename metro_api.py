@@ -70,14 +70,16 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from core import (  # noqa: E402  （必须在 sys.path 调整之后导入）
     ALGORITHMS,
+    WEIGHTS,
     DataFormatError,
     MetroDataset,
     RouteResult,
     load_dataset,
+    normalise_weight,
     solve,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 DEFAULT_DATA = PROJECT_ROOT / "data" / "beijing_metro.json"
 ALGORITHM_NAMES = ("Dijkstra", "A*", "BFS")
@@ -188,6 +190,18 @@ def resolve_algorithm(name: Any) -> str:
         "（也接受 astar / bfs / 最少换乘 等别名）",
         detail=list(ALGORITHM_NAMES),
     )
+
+
+def resolve_weight(name: Any = "time") -> str:
+    """把权重别名解析成 ``time``（最快，默认）或 ``distance``（里程最短）。
+
+    失败时抛 :class:`InvalidRequest`（对应 HTTP 400 / CLI 退出码 1），
+    与未知算法保持同一种错误处理风格。
+    """
+    try:
+        return normalise_weight(name)
+    except ValueError as exc:
+        raise InvalidRequest(str(exc)) from exc
 
 
 # ======================================================================
@@ -353,38 +367,53 @@ class MetroNavigator:
     # ------------------------------------------------------------------
     # 寻路
     # ------------------------------------------------------------------
-    def route(self, start: Any, end: Any, *, algorithm: str = "Dijkstra") -> dict:
+    def route(
+        self,
+        start: Any,
+        end: Any,
+        *,
+        algorithm: str = "Dijkstra",
+        weight: str = "time",
+    ) -> dict:
         """求一条路径，返回可直接 JSON 化的结果字典。
 
         参数
         ----
         start / end : 站 ID 或站名（如 ``"S001"`` / ``"苹果园"``）；
         algorithm   : ``Dijkstra``（默认，最快）、``A*``、``BFS``（最少换乘），
-                      也接受 ``astar`` / ``bfs`` / ``最少换乘`` 等别名。
+                      也接受 ``astar`` / ``bfs`` / ``最少换乘`` 等别名；
+        weight      : 优化目标，``time``（默认，最快）或 ``distance``（里程最短），
+                      也接受 ``距离`` / ``最短距离`` 等中文别名；BFS 用它做
+                      “最少换乘”前提下的同层择优。
 
         返回
         ----
-        dict：``ok``、``found``、``start``/``end``、``summary``、``stations``、
-        ``legs``、``message``。无路径时 ``found=False``、列表为空，不抛异常
-        （「查无路径」是合法结果，不是接口错误）。
+        dict：``ok``、``algorithm``、``weight``、``found``、``start``/``end``、
+        ``summary``、``stations``、``legs``、``message``。无路径时
+        ``found=False``、列表为空，不抛异常。
         """
         start_id = self.resolve_station(start)
         end_id = self.resolve_station(end)
         algorithm = resolve_algorithm(algorithm)
+        weight = resolve_weight(weight)
 
         started = time.perf_counter()
-        result = solve(self.graph, algorithm, start_id, end_id)
+        result = solve(self.graph, algorithm, start_id, end_id, weight=weight)
         wall_ms = (time.perf_counter() - started) * 1000.0
         return self._result_to_dict(result, wall_ms)
 
-    def compare(self, start: Any, end: Any) -> dict:
-        """同一对起终点跑三种算法，并给出差异摘要（答辩/报告常用）。"""
+    def compare(self, start: Any, end: Any, *, weight: str = "time") -> dict:
+        """同一对起终点跑三种算法，并给出差异摘要（答辩/报告常用）。
+
+        ``weight`` 默认为 ``time``（最快）；传 ``distance`` 可比较“最短里程”口径。
+        """
         start_id = self.resolve_station(start)
         end_id = self.resolve_station(end)
+        weight = resolve_weight(weight)
 
         routes: dict[str, dict] = {}
         for name in ALGORITHM_NAMES:
-            routes[name] = self.route(start_id, end_id, algorithm=name)
+            routes[name] = self.route(start_id, end_id, algorithm=name, weight=weight)
 
         dijkstra = routes["Dijkstra"]
         astar = routes["A*"]
@@ -415,6 +444,7 @@ class MetroNavigator:
             "ok": True,
             "start": self._station_ref(start_id),
             "end": self._station_ref(end_id),
+            "weight": weight,
             "algorithms": routes,
             "highlights": highlights,
         }
@@ -444,6 +474,7 @@ class MetroNavigator:
         payload: dict[str, Any] = {
             "ok": True,
             "algorithm": result.algorithm,
+            "weight": result.weight,
             "found": bool(result.found),
             "start": self._station_ref(result.start_id),
             "end": self._station_ref(result.end_id),
@@ -493,10 +524,13 @@ def quick_route(
     end: Any,
     *,
     algorithm: str = "Dijkstra",
+    weight: str = "time",
     data_path: str | os.PathLike[str] | None = None,
 ) -> dict:
     """一次性加载 + 求路径（适合脚本里只查一两条的场景）。"""
-    return connect(data_path).route(start, end, algorithm=algorithm)
+    return connect(data_path).route(
+        start, end, algorithm=algorithm, weight=weight
+    )
 
 
 def error_payload(exc: BaseException) -> dict:
@@ -531,8 +565,10 @@ def _format_route(payload: dict) -> str:
             f"（{payload.get('message') or '两站不连通'}）"
         )
     summary = payload["summary"]
+    weight_label = "最快" if payload.get("weight", "time") == "time" else "最短里程"
     lines = [
-        f"{payload['algorithm']}：{payload['start']['name']} → {payload['end']['name']}",
+        f"{payload['algorithm']}（{weight_label}）："
+        f"{payload['start']['name']} → {payload['end']['name']}",
         f"  {summary['time_min']:.3f} 分钟 · {summary['distance_km']:.3f} km · "
         f"换乘 {summary['transfers']} 次 · {summary['station_count']} 站 · "
         f"扩展 {summary['expanded']} 个站台 · 算法 {summary['elapsed_ms']:.3f} ms",
@@ -592,7 +628,9 @@ def _cmd_lines(nav: MetroNavigator, args: argparse.Namespace) -> int:
 
 
 def _cmd_route(nav: MetroNavigator, args: argparse.Namespace) -> int:
-    payload = nav.route(args.start, args.end, algorithm=args.algorithm)
+    payload = nav.route(
+        args.start, args.end, algorithm=args.algorithm, weight=args.weight
+    )
     if args.json:
         _print_json(payload)
     else:
@@ -601,7 +639,7 @@ def _cmd_route(nav: MetroNavigator, args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(nav: MetroNavigator, args: argparse.Namespace) -> int:
-    payload = nav.compare(args.start, args.end)
+    payload = nav.compare(args.start, args.end, weight=args.weight)
     if args.json:
         _print_json(payload)
         return 0
@@ -673,12 +711,16 @@ def build_parser() -> argparse.ArgumentParser:
     route.add_argument("--end", required=True, help="终点：站 ID 或站名")
     route.add_argument("--algorithm", default="Dijkstra",
                        help="Dijkstra（默认）/ A* / BFS，支持别名")
+    route.add_argument("--weight", default="time",
+                       help="优化目标：time=最快（默认）/ distance=最短里程")
     route.add_argument("--json", action="store_true", help="输出 JSON")
 
     compare = sub.add_parser("compare", help="三种算法对比")
     _add_data_option(compare)
     compare.add_argument("--start", required=True)
     compare.add_argument("--end", required=True)
+    compare.add_argument("--weight", default="time",
+                         help="优化目标：time=最快（默认）/ distance=最短里程")
     compare.add_argument("--json", action="store_true", help="输出 JSON")
 
     export = sub.add_parser("export", help="导出路网 JSON（站点 + 线路 + 规模）")

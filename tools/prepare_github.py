@@ -140,7 +140,10 @@ REQUIRED_FILES = [
     "tools/serve_api.py",
     # 可调用接口（P4 扩展）：SDK/CLI 文档与回归测试
     "docs/API接口说明.md",
+    "docs/评审整改记录-2026-10-18.md",
+    "tests/__init__.py",
     "tests/test_api.py",
+    "tests/test_contracts.py",
 ]
 
 # 报告交付物：由报告组并行产出，缺失只提醒、不判红（最终上传前建议 --strict）
@@ -160,6 +163,7 @@ DOC_LINK_FILES = [
     "CONTRIBUTING.md",
     "docs/GitHub协作与上传指南.md",
     "docs/API接口说明.md",
+    "docs/评审整改记录-2026-10-18.md",
 ]
 
 # .gitignore 必须覆盖的运行产物（做子串匹配）

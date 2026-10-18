@@ -208,8 +208,24 @@ def check_astar() -> str:
     _assert(abs(d.total_distance - a.total_distance) < 1e-6, "A* 与 Dijkstra 里程不同")
     _assert(a.expanded <= d.expanded,
             f"A* 扩展 {a.expanded} 个节点，反而多于 Dijkstra 的 {d.expanded} 个")
+    # 多准则口径（任务书 P01“基于距离/时间权重的 Dijkstra”）：
+    # 距离权重下 Dijkstra / A* 必须得到同一最短里程，且“最快”与“最短里程”
+    # 是两种不同准则——时间最优的路不一定是里程最短的路。
+    dd = solve(graph, "Dijkstra", "S040", "S095", weight="distance")
+    ad = solve(graph, "A*", "S040", "S095", weight="distance")
+    _validate_path(graph, dd, "Dijkstra(distance)")
+    _validate_path(graph, ad, "A*(distance)")
+    _assert(dd.weight == "distance" and ad.weight == "distance", "结果里的权重标记不对")
+    _assert(abs(dd.total_distance - ad.total_distance) < 1e-6,
+            "距离权重下 A* 与 Dijkstra 的最短里程不一致")
+    _assert(dd.total_distance <= d.total_distance + 1e-9,
+            f"距离权重路径 {dd.total_distance} km 反而长于时间权重路径 {d.total_distance} km")
+    _assert(d.total_time <= dd.total_time + 1e-9,
+            f"时间权重路径 {d.total_time} min 反而慢于距离权重路径 {dd.total_time} min")
     return (f"同优 {d.total_time:.1f} min；扩展 A*={a.expanded} / "
-            f"Dijkstra={d.expanded}（省 {d.expanded - a.expanded} 个）")
+            f"Dijkstra={d.expanded}（省 {d.expanded - a.expanded} 个）；"
+            f"距离权重同为 {dd.total_distance:.3f} km"
+            f"（时间最优 {d.total_distance:.3f} km）")
 
 
 @check(5, "BFS 换乘次数最少", "算法")

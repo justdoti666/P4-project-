@@ -325,7 +325,12 @@ def _get(obj: object, *names: str, default=None):
 
 
 def _as_station_id(item: object) -> str:
-    """从字符串 / dict / 对象里取出站点 ID。"""
+    """从字符串 / dict / 对象里取出站点 ID。
+
+    兼容四种历史命名：``id``（本项目）、``station_id``、``sid``（P1/P2 的
+    《技术方案》§6 与 `docs/交接/P1-收到的口径.md` 用的是 sid）以及
+    ``station``（站台节点里“当前站点”的字段名）。
+    """
     if item is None:
         return ""
     if isinstance(item, str):
@@ -333,13 +338,43 @@ def _as_station_id(item: object) -> str:
     if isinstance(item, (tuple, list)):  # P2 的站台节点常写成 (站点, 线路)
         return str(item[0]) if item else ""
     if isinstance(item, dict):
-        return str(item.get("id") or item.get("station_id") or item.get("station") or "")
+        return str(
+            item.get("id")
+            or item.get("station_id")
+            or item.get("sid")
+            or item.get("station")
+            or ""
+        )
     return str(
         getattr(item, "id", None)
         or getattr(item, "station_id", None)
+        or getattr(item, "sid", None)
         or getattr(item, "station", None)
         or ""
     )
+
+
+#: 任务书/P2 的 ``events`` 常写成 ``(kind, sid)``；只有这些 kind 才按“事件”解析，
+#: 否则 ``("S1", "L1")`` 这类站台节点元组会被误读成事件。
+_EVENT_KINDS = frozenset(
+    {"settle", "visit", "visited", "push", "pop", "expand", "relax", "transfer", "ride"}
+)
+
+
+def _as_event_station(item: object) -> str:
+    """从一个动画事件里取出站点 ID，兼容任务书与 P2 的几种写法。
+
+    * ``"S1"``                             → ``S1``；
+    * ``("settle", "S1")``                 → ``S1``（任务书/P2 的 events）；
+    * ``{"kind": "settle", "sid": "S1"}``  → ``S1``；
+    * ``("S1", "L1")``                     → ``S1``（站台节点元组）。
+    """
+    if isinstance(item, (tuple, list)) and len(item) >= 2:
+        kind = str(item[0]).strip().lower()
+        if kind in _EVENT_KINDS:
+            return _as_station_id(item[1])
+        return _as_station_id(item[0])
+    return _as_station_id(item)
 
 
 def _looks_like_feeder(line: object, name: str) -> bool:
@@ -367,13 +402,14 @@ def normalise_graph(graph: object) -> DrawGraph:
 
     raw_stations = _get(graph, "stations", default={})
     if isinstance(raw_stations, dict):
-        station_iter: Iterable = raw_stations.values()
+        # dict 形式的 stations：允许“key 就是站点 ID、value 里没有 id 字段”
+        station_items: list[tuple[object | None, object]] = list(raw_stations.items())
     else:
-        station_iter = raw_stations or []
+        station_items = [(None, item) for item in (raw_stations or [])]
 
     stations: dict[str, DrawStation] = {}
-    for item in station_iter:
-        sid = _as_station_id(item)
+    for key, item in station_items:
+        sid = _as_station_id(item) or (str(key) if key is not None else "")
         if not sid:
             continue
         try:
@@ -475,6 +511,9 @@ def normalise_result(graph: object, draw_graph: DrawGraph, result: object) -> Pa
     兼容两套字段名：
     * P2 当前实现：``stations / legs / total_distance / total_time / transfers``
     * 任务书接口：``path / distance_km / time_min / events``
+
+    ``events`` 兼容 ``(kind, sid)`` 元组（任务书/P2 写法）、``{"kind":…, "sid":…}``
+    字典与纯站点 ID 列表三种形式；解析见 :func:`_as_event_station`。
     """
     if result is None:
         return PathView(found=False, message="还没有搜索")
@@ -543,7 +582,7 @@ def normalise_result(graph: object, draw_graph: DrawGraph, result: object) -> Pa
     raw_events = _get(result, "events", "visited_order", "settle_events", "visited", default=[]) or []
     events: list[str] = []
     for event in raw_events:
-        sid = _as_station_id(event)
+        sid = _as_event_station(event)
         if sid:
             events.append(sid)
     if not events:
@@ -852,6 +891,14 @@ class CanvasView(tk.Canvas):
     def reset_view(self) -> None:
         """只复位缩放和平移，保留当前路径。"""
         self._transform.reset()
+        self._schedule_redraw(0)
+
+    def refresh(self) -> None:
+        """请求一次重画（公开方法，供 P3/宿主在数据或状态变化后调用）。
+
+        P3 不要直接调用私有的 ``_redraw``：它绕过了防抖与“是否正在动画”
+        的保护逻辑；``refresh()`` 走统一的调度入口，等价于安全的整图重绘。
+        """
         self._schedule_redraw(0)
 
     def export(self, path: str) -> str:

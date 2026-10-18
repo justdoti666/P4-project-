@@ -25,7 +25,7 @@ tools/make_report.py  五章报告 docx 生成（终稿见 reports/）
 data/                 134 站北京教学路网 + 10 站演示图 + 三站/不连通小图
 docs/                 验收说明、GitHub 协作指南、API 说明、报告素材、演示 GIF、bench.csv、插图
 reports/              五章实验报告终稿 docx + PDF（目录已更新，可直接提交）
-tests/test_api.py     可调用接口回归（35 个 unittest 用例）
+tests/test_api.py     可调用接口回归（55 个 unittest 用例）
 ```
 
 最短验证命令（在项目根目录执行）：
@@ -33,7 +33,7 @@ tests/test_api.py     可调用接口回归（35 个 unittest 用例）
 ```powershell
 python main.py --check                         # 10 项自检，退出码 0/1
 python main.py --smoke _smoke/demo.ps          # 界面冒烟 + 导出画布
-python -m unittest discover -s tests -v        # 可调用接口回归（35 用例）
+python -m unittest discover -s tests -v        # 可调用接口回归（55 用例）
 python metro_api.py route --start 苹果园 --end 天通苑北 --json
 python tools/export_canvas.py docs/figures/my_route.png --demo
 python tools/record_demo.py                    # 自动录制演示 GIF
@@ -49,7 +49,7 @@ python tools/prepare_github.py --check         # 仓库体检：协作文件 / C
 | `python main.py --smoke _smoke/smoke.ps` | 加载→搜索→动画→跳过→导出成功 | 约 3.2 s |
 | `python tools/export_canvas.py ...` | 1400×900 PNG 导出成功 | 约 3.0 s |
 | `python tools/record_demo.py` | 自动录制 23 帧、1200×789 演示 GIF | 约 20 s |
-| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 35 个用例全部通过 | 约 2.5 s |
+| `python -m unittest discover -s tests` | 接口 SDK/CLI/HTTP 共 55 个用例全部通过 | 约 2.5 s |
 | `python metro_api.py route ... --json` | 返回 JSON：79.575 min / 换乘 1 次 | < 0.5 s |
 | `python tools/serve_api.py --port 8765` | 9 个 HTTP 端点 + 404/400/CORS 冒烟通过 | 启动 < 1 s |
 | 打开 GUI（含 134 站绘制） | 窗口出现并可交互 | 约 1.6 s |
@@ -92,7 +92,7 @@ python main.py                  # 打开界面
 python main.py --check --verbose               # 每项都打印细节
 python main.py --smoke _smoke/a.png            # 自动选点、搜索、动画、导出
 python tools/export_canvas.py _smoke/a.ps      # 只导出画布
-python tools/bench.py                          # 生成 docs/bench.csv 和图 4-4
+python tools/bench.py --update-docs              # 更新 docs/bench.csv 和图 4-4（默认只写 _smoke/）
 python tools/export_canvas.py --figure-pack    # 生成 docs/figures 整套插图
 python tools/record_demo.py                    # 录演示 GIF（窗口会置顶约 15 秒）
 ```
@@ -146,9 +146,9 @@ metro-p4/
 │  └─ figures/                # 报告插图（report/ 为报告专用插图）
 ├─ reports/
 │  ├─ 城市交通路径导航系统_实验报告.docx  # 五章报告终稿（源文件，可用脚本重新生成）
-│  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（34 页，目录已更新，可直接提交）
+│  └─ 城市交通路径导航系统_实验报告.pdf   # 终稿 PDF（35 页，目录已更新，可直接提交）
 ├─ tests/
-│  └─ test_api.py             # 可调用接口回归（35 个用例：SDK/CLI/HTTP）
+│  └─ test_api.py             # 可调用接口回归（55 个用例：SDK/CLI/HTTP）
 ├─ requirements.txt           # Pillow（仅 PNG/GIF 需要）
 ├─ run.ps1 / run.bat          # 启动脚本
 └─ _smoke/                    # 冒烟测试输出（可删，已被 .gitignore 忽略）
@@ -333,7 +333,7 @@ python selfcheck.py --mutation-demo # 证明断言不是恒真
 ## 7. 对比实验与报告素材
 
 ```powershell
-python tools/bench.py                 # 写 docs/bench.csv、docs/bench.md、图 4-4
+python tools/bench.py --update-docs   # 写 docs/bench.csv、docs/bench.md、图 4-4
 python tools/export_canvas.py --figure-pack
 python tools/record_demo.py           # 录 docs/P4-演示动画.gif
 ```
@@ -444,7 +444,7 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 
 * [`docs/P4-验收与交接.md`](docs/P4-验收与交接.md) —— 5 条验收逐项证据、接口交接、限制
 * [`reports/城市交通路径导航系统_实验报告.docx`](reports/城市交通路径导航系统_实验报告.docx) —— **五章实验报告终稿源文件**（`python tools/make_report.py` 可重新生成）
-* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— **终稿 PDF**（34 页，目录页码已更新，可直接提交；docx 为可再生成源）
+* [`reports/城市交通路径导航系统_实验报告.pdf`](reports/城市交通路径导航系统_实验报告.pdf) —— **终稿 PDF**（35 页，目录页码已更新，可直接提交；docx 为可再生成源）
 * [`docs/P4-报告终稿说明.md`](docs/P4-报告终稿说明.md) —— 报告如何重新生成 / 检查、本版改动清单
 * [`tools/make_report.py`](tools/make_report.py) —— 报告生成器（`python tools/make_report.py`）
 * [`tools/check_report.py`](tools/check_report.py) —— 报告统稿检查器（退出码 0/1）
@@ -463,7 +463,7 @@ Tk 导出的其实是 EPS（`%!PS-Adobe-3.0 EPSF-3.0`）。Windows 资源管理�
 * [`docs/API接口说明.md`](docs/API接口说明.md) —— Python SDK / CLI / HTTP 三套调用的完整说明
 * [`metro_api.py`](metro_api.py) —— `connect()` / `MetroNavigator` / 命令行入口
 * [`tools/serve_api.py`](tools/serve_api.py) —— 本地 HTTP JSON 服务（零第三方依赖）
-* [`tests/test_api.py`](tests/test_api.py) —— 35 个接口回归用例
+* [`tests/test_api.py`](tests/test_api.py) —— 55 个接口回归用例
 
 ---
 
@@ -480,7 +480,7 @@ CI 配置见 [`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml
 
 * `python main.py --check --no-gui` —— 无显示环境跳过第 10 项 GUI，前 9 项必须全绿；
 * `xvfb-run -a python selfcheck.py --mutation-demo` —— 虚拟显示下跑真实 Tk 窗口，必须 3 个 `[CAUGHT]`；
-* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）35 个用例。
+* `python -m unittest discover -s tests -v` —— 可调用接口（SDK/CLI/HTTP）55 个用例。
 
 push / PR 到 `main` 自动触发；失败时 Actions 日志里能直接看到 `[FAIL]` 红项与 detail。
 
@@ -527,15 +527,17 @@ from metro_api import connect
 
 nav = connect()                                        # 默认 134 站北京路网
 print(nav.route("苹果园", "天通苑北")["summary"])        # 79.575 min / 33.236 km / 换乘 1
+print(nav.route("S001", "S061", weight="distance")["summary"])  # 里程最短口径（多准则）
 print(nav.compare("慈寿寺", "崇文门")["highlights"])     # 三算法差异摘要
 ```
 
 ```powershell
 python metro_api.py route --start S001 --end S061 --json
+python metro_api.py route --start S001 --end S061 --weight distance --json
 python metro_api.py compare --start S001 --end S061
 python main.py --cli info                              # 等价入口
 python tools/serve_api.py --port 8765                  # HTTP：GET /api/route?start=..&end=..
-python -m unittest discover -s tests -v                # 35 个接口回归用例
+python -m unittest discover -s tests -v                # 55 个接口回归用例
 ```
 
 * 完整文档（方法 / JSON 结构 / 端点 / 错误码 / FAQ）：[`docs/API接口说明.md`](docs/API接口说明.md)

@@ -20,9 +20,9 @@
     GET  /api/stations          站点列表（?line=L1&query=苹果）
     GET  /api/lines             线路列表
     GET  /api/station?q=苹果园   单个站点详情
-    GET  /api/route?start=..&end=..&algorithm=Dijkstra
-    POST /api/route             JSON body: {"start": .., "end": .., "algorithm": ..}
-    GET  /api/compare?start=..&end=..   三种算法对比
+    GET  /api/route?start=..&end=..&algorithm=Dijkstra&weight=time
+    POST /api/route             JSON body: {"start": .., "end": .., "algorithm": .., "weight": ..}
+    GET  /api/compare?start=..&end=..&weight=time   三种算法对比
     OPTIONS *                   CORS 预检
 
 所有响应都是 UTF-8 JSON；可预期错误返回 ``{"ok": false, "error": {...}}``，
@@ -64,9 +64,9 @@ ENDPOINTS: list[tuple[str, str, str]] = [
     ("GET", "/api/stations", "站点列表（?line=&query=）"),
     ("GET", "/api/lines", "线路列表"),
     ("GET", "/api/station", "站点详情（?q=站名或ID）"),
-    ("GET", "/api/route", "寻路（?start=&end=&algorithm=）"),
-    ("POST", "/api/route", "寻路（JSON body）"),
-    ("GET", "/api/compare", "三算法对比（?start=&end=）"),
+    ("GET", "/api/route", "寻路（?start=&end=&algorithm=&weight=）"),
+    ("POST", "/api/route", "寻路（JSON body，可带 weight）"),
+    ("GET", "/api/compare", "三算法对比（?start=&end=&weight=）"),
 ]
 
 
@@ -228,10 +228,18 @@ class ApiHandler(BaseHTTPRequestHandler):
                     query.get("start"),
                     query.get("end"),
                     algorithm=query.get("algorithm") or "Dijkstra",
+                    weight=query.get("weight") or "time",
                 ),
             )
         elif path == "/api/compare":
-            self._send(200, nav.compare(query.get("start"), query.get("end")))
+            self._send(
+                200,
+                nav.compare(
+                    query.get("start"),
+                    query.get("end"),
+                    weight=query.get("weight") or "time",
+                ),
+            )
         else:
             self._send(
                 404,
@@ -265,7 +273,11 @@ class ApiHandler(BaseHTTPRequestHandler):
         start = body.get("start", query.get("start"))
         end = body.get("end", query.get("end"))
         algorithm = body.get("algorithm", query.get("algorithm") or "Dijkstra")
-        self._send(200, self.nav.route(start, end, algorithm=algorithm))
+        weight = body.get("weight", query.get("weight") or "time")
+        self._send(
+            200,
+            self.nav.route(start, end, algorithm=algorithm, weight=weight),
+        )
 
 
 class _ThreadingServer(ThreadingHTTPServer):

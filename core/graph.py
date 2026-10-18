@@ -28,13 +28,18 @@ class Station:
 
 @dataclass(frozen=True)
 class MetroLine:
-    """线路：按列车行驶顺序排列的站点 ID 序列；loop 表示环线。"""
+    """线路：按列车行驶顺序排列的站点 ID 序列；loop 表示环线。
+
+    ``speed_kmh`` 可选：用来表达“快线/慢线 / 接驳线”的差异；``None`` 表示
+    使用全网默认速度（``MetroGraph.speed_kmh``），因此旧数据格式完全兼容。
+    """
 
     id: str
     name: str
     color: str
     loop: bool
     stations: tuple[str, ...]
+    speed_kmh: float | None = None
 
 
 @dataclass(frozen=True)
@@ -107,7 +112,7 @@ class MetroGraph:
                 pairs.append((order[-1], order[0]))
             for a, b in pairs:
                 distance = self.distance(a, b)
-                time = self.ride_time(distance)
+                time = self.ride_time(distance, line.id)
                 self.adjacency[(a, line.id)].append(
                     Edge(b, line.id, "ride", line.id, time, distance)
                 )
@@ -141,24 +146,51 @@ class MetroGraph:
         sa, sb = self.stations[a], self.stations[b]
         return math.hypot(sa.x - sb.x, sa.y - sb.y)
 
-    def ride_time(self, distance: float) -> float:
-        """乘车时间 = 行驶时间 + 停站时间。"""
-        return distance / self.speed_kmh * 60.0 + self.dwell_minutes
+    def line_speed(self, line_id: str | None = None) -> float:
+        """线路的旅行速度（km/h）：per-line 优先，缺省回退全网 ``speed_kmh``。
+
+        数据格式里 ``lines[].speed_kmh`` 是可选字段；没写时行为与旧版完全一致。
+        """
+        if line_id:
+            line = self.lines.get(line_id)
+            if line is not None and line.speed_kmh and line.speed_kmh > 0:
+                return float(line.speed_kmh)
+        return float(self.speed_kmh)
+
+    def max_speed_kmh(self) -> float:
+        """全网最高速度；A* 的启发函数用它保证可采纳（不高估真实时间）。"""
+        speeds = [float(self.speed_kmh)]
+        speeds.extend(
+            float(line.speed_kmh)
+            for line in self.lines.values()
+            if line.speed_kmh is not None and line.speed_kmh > 0
+        )
+        return max(speeds)
+
+    def ride_time(self, distance: float, line_id: str | None = None) -> float:
+        """乘车时间 = 行驶时间 + 停站时间（支持 per-line 速度）。"""
+        speed = self.line_speed(line_id)
+        return distance / speed * 60.0 + self.dwell_minutes
 
     def heuristic(self, station_id: str, target_id: str) -> float:
-        """A* 启发函数 h(n)：当前站到终点的直线距离 / 最高速度（分钟）。
+        """A* 启发函数 h(n)：当前站到终点的直线距离 / **全网最高速度**（分钟）。
 
         因为实际乘车时间一定不小于「直线距离 / 最高速度」，且换乘时间为正，
-        所以 h(n) 不会高估真实代价（可采纳），A* 仍能得到最优路径。
+        所以 h(n) 不会高估真实代价（可采纳），A* 仍能得到最优路径；
+        线路有 per-line 速度时用 max_speed_kmh()，仍不会高估。
         """
-        return self.distance(station_id, target_id) / self.speed_kmh * 60.0
+        return self.distance(station_id, target_id) / self.max_speed_kmh() * 60.0
+
+    def heuristic_distance(self, station_id: str, target_id: str) -> float:
+        """距离权重下 A* 的启发函数：直接取两站直线距离（km）。"""
+        return self.distance(station_id, target_id)
 
     def segment(self, line_id: str, a: str, b: str) -> tuple[float, float]:
         """同一条线路上相邻两站 (a,b) 的 (时间, 距离)。"""
         key = (line_id, a, b)
         if key not in self._segment_cache:
             distance = self.distance(a, b)
-            self._segment_cache[key] = (self.ride_time(distance), distance)
+            self._segment_cache[key] = (self.ride_time(distance, line_id), distance)
         return self._segment_cache[key]
 
     def stations_between(self, line_id: str, a: str, b: str) -> list[str]:

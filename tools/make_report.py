@@ -279,7 +279,7 @@ def build_report() -> Path:
              "ui/canvas.py：ViewTransform + 线路/站点绘制"],
             ["起终点选择", "下拉框选择，或在地图上左键/右键点选；缩放后仍能命中",
              "ui/window.py + CanvasView.bind_click / hit_test"],
-            ["最快路径", "以乘车时间 + 换乘时间为边权运行 Dijkstra",
+            ["最快路径", "以乘车时间 + 换乘时间为边权运行 Dijkstra，可切换为里程权重",
              "core/algorithms.py：二叉堆实现"],
             ["最少换乘", "以换乘次数为层数的 BFS，给出换乘站，并在同换乘次数下择优",
              "bfs_min_transfers + 约束最短路"],
@@ -344,15 +344,18 @@ def build_report() -> Path:
     )
     doc.p(
         "乘车边权重按列车平均旅行速度与停站时间计算：t = d / v × 60 + t_dwell，其中 d 为"
-        "两站间的欧几里得距离（km），v = 35 km/h，t_dwell = 0.6 min；换乘边权重取 4.0 min，"
-        "用于近似站内步行与候车时间。路径总耗时等于所有乘车段与换乘段时间之和，总里程只"
-        "累加乘车段距离。模型假设列车匀速、各线路速度相同、换乘时间固定，不模拟实时延误"
-        "与车厢拥挤程度。"
+        "两站间的欧几里得距离（km），v 默认为 35 km/h，t_dwell = 0.6 min；换乘边权重取 4.0 min，"
+        "用于近似站内步行与候车时间。线路可在数据中单独声明 speed_kmh 以表达快线/慢线，"
+        "未声明时回退到全网默认速度，因此旧数据格式完全兼容。Dijkstra/A* 支持两种优化"
+        "目标：weight=time（默认，总耗时最短）与 weight=distance（总里程最短）；换乘边"
+        "里程为 0，距离权重只累加乘车段。路径总耗时等于所有乘车段与换乘段时间之和。"
+        "模型假设列车匀速、换乘时间固定，不模拟实时延误与车厢拥挤程度。"
     )
     doc.p(
         "这样建模还有一个好处：A* 的启发函数可以直接复用同一份坐标与速度——"
-        "h(n) = 直线距离(n, 终点) / v × 60，与边权使用同一套几何，因此可采纳性分析"
-        "是自洽的（详见 3.2 节）。"
+        "h(n) = 直线距离(n, 终点) × 60 / v_max（v_max 为全网最高速度，保证不高估），"
+        "距离权重时 h(n) 直接取直线距离；两种启发函数都与边权使用同一套几何，"
+        "因此可采纳性分析是自洽的（详见 3.2 节）。"
     )
 
     doc.h2("数据来源与规模")
@@ -575,7 +578,7 @@ def build_report() -> Path:
         "整理异常处理策略，最后从分层视角概览系统实现与主界面。"
     )
 
-    doc.h2("Dijkstra 最短耗时算法")
+    doc.h2("Dijkstra 最短耗时 / 最短里程算法")
     doc.p(
         "Dijkstra 维护源点到各站台节点的最短距离估计 dist，并用优先队列按距离从小到大"
         "取出站台节点。取出后对它的每条出边执行松弛（relaxation）：若经过当前站台节点"
@@ -589,7 +592,7 @@ def build_report() -> Path:
         "    if node 已被扩展: continue\n"
         "    if node.station == 终点站: 回溯前驱，结束\n"
         "    for edge in adjacency[node]:\n"
-        "        nd = d + edge.time\n"
+        "        nd = d + weight(edge)      # weight=time 或 distance\n"
         "        if nd < dist[edge.to] - ε:\n"
         "            dist[edge.to] = nd\n"
         "            prev[edge.to] = (node, edge.kind)\n"
@@ -599,7 +602,7 @@ def build_report() -> Path:
     doc.code(
         "for edge in graph.adjacency[node]:\n"
         "    nxt = (edge.to_station, edge.to_line)\n"
-        "    new_dist = current_dist + edge.time\n"
+        "    new_dist = current_dist + _edge_cost(edge, weight)\n"
         "    if new_dist < dist.get(nxt, math.inf) - 1e-12:\n"
         "        dist[nxt] = new_dist\n"
         "        prev[nxt] = (node, edge.kind)\n"
@@ -613,31 +616,46 @@ def build_report() -> Path:
         "复杂度：设站台节点数为 V、有向边数为 E，每个站台节点最多入堆多次，总时间为 "
         "O((V+E) log V)，空间为 O(V+E)，用于存储邻接表、dist、prev 和堆。"
     )
+    doc.p(
+        "多准则：实现没有把边权写死为时间，而是抽象为 weight 参数。weight=\"time\"（默认）"
+        "取 edge.time，得到最快路径；weight=\"distance\" 取 edge.distance，得到里程最短"
+        "路径；线路还可在数据中声明 speed_kmh 表达快线/慢线。两种目标的最优解允许不同："
+        "S001→S061 最快路径 79.6 min / 33.24 km，而最短里程路径 82.3 min / 33.22 km。"
+        "这正是任务书 P01“基于距离/时间权重的 Dijkstra”要求的口径，接口层也提供了 "
+        "weight 参数（详见 3.6 节与 docs/API接口说明.md）。"
+    )
 
     doc.h2("A* 启发式搜索")
     doc.p(
         "A* 在 Dijkstra 的基础上为每个站台节点增加启发值 h(n)，按 f(n) = g(n) + h(n) 排序，"
-        "其中 g(n) 是从起点到 n 的实际耗时，h(n) 是对 n 到终点剩余耗时的估计。本系统取 "
-        "h(n) = 欧几里得距离(n, 终点) / v × 60，单位为分钟，v = 35 km/h 与所有乘车边"
-        "使用的速度相同。"
+        "其中 g(n) 是从起点到 n 的实际代价，h(n) 是对 n 到终点剩余代价的估计。本系统取 "
+        "h(n) = 欧几里得距离(n, 终点) × 60 / v_max（v_max 为全网最高速度，含 per-line "
+        "speed_kmh），单位为分钟；距离权重下 h(n) 直接取直线距离（km）。"
     )
     doc.p(
-        "可采纳性：对任意乘车边 (u, v)，其实际耗时 c(u,v) = d(u,v)/v×60 + t_dwell ≥ "
-        "d(u,v)/v×60。由三角不等式 d(u, t) ≤ d(u, v) + d(v, t)，可得 h(u) ≤ h(v) + c(u,v)；"
-        "换乘边距离为 0 而耗时为 4 min，同样满足 h(u) ≤ h(v) + 4。因此 h 是一致的，"
-        "一致的启发函数一定可采纳，A* 不会高估剩余代价，仍能得到与 Dijkstra 相同的最优解。"
+        "可采纳性：对任意乘车边 (u, v)，其实际耗时 c(u,v) = d(u,v)/v_line×60 + t_dwell ≥ "
+        "d(u,v)/v_max×60。由三角不等式 d(u, t) ≤ d(u, v) + d(v, t)，可得 h(u) ≤ h(v) + c(u,v)；"
+        "换乘边距离为 0 而耗时为 4 min，同样满足 h(u) ≤ h(v) + 4。距离权重下 h 就是直线"
+        "距离，同样满足三角不等式。因此两种 h 都是一致的，一致的启发函数一定可采纳，"
+        "A* 不会高估剩余代价，仍能得到与 Dijkstra 相同的最优解。"
     )
     doc.p(
         "界面上选择“启发式最快（A*）”时，路径总耗时与 Dijkstra 完全相同，但扩展的站台"
         "节点明显减少：4.6 节的 5 对起终点中，A* 平均只扩展 76.8 个站台节点，而 Dijkstra "
-        "需要 133.0 个。这说明欧几里得距离能有效地把搜索引向终点方向。"
+        "需要 133.0 个。这说明欧几里得距离能有效地把搜索引向终点方向；距离权重下 A* 与 "
+        "Dijkstra 的最短里程同样一致（自检第 04 项同时验证两种权重）。"
     )
     doc.code(
         "def heuristic(self, station_id: str, target_id: str) -> float:\n"
         "    \"\"\"直线距离 / 最高速度，换算成分钟（不会高估真实代价）。\"\"\"\n"
-        "    return self.distance(station_id, target_id) / self.speed_kmh * 60.0\n"
+        "    return self.distance(station_id, target_id) / self.max_speed_kmh() * 60.0\n"
         "\n"
-        "f = new_g + graph.heuristic(edge.to_station, end_id)\n"
+        "def heuristic_distance(self, station_id: str, target_id: str) -> float:\n"
+        "    \"\"\"距离权重下的启发函数：直线距离。\"\"\"\n"
+        "    return self.distance(station_id, target_id)\n"
+        "\n"
+        "h = graph.heuristic(to, end) if weight == \"time\" else graph.heuristic_distance(to, end)\n"
+        "f = new_g + h\n"
         "heapq.heappush(heap, (f, new_g, next(counter), nxt))",
         title="代码 3-2  A* 启发函数与 f 值计算（core/algorithms.py 节选）",
     )
@@ -1000,8 +1018,10 @@ def build_report() -> Path:
     doc.note(
         f"注：扩展节点均值为 Dijkstra {avg_expand_d:.1f}、A* {avg_expand_a:.1f}、"
         f"BFS {avg_expand_b:.1f}；单次寻路耗时中位数均值为 Dijkstra {avg_ms_d:.2f} ms、"
-        f"A* {avg_ms_a:.2f} ms、BFS {avg_ms_b:.2f} ms。BFS 按整条线路扩展，"
-        "与 Dijkstra/A* 的逐站台扩展不是同一计数口径。"
+        f"A* {avg_ms_a:.2f} ms、BFS {avg_ms_b:.2f} ms。BFS 的 expanded 记录的是分层 BFS "
+        "的“线路扩展帧”（一条线一次），且最终路径由第二阶段“最少换乘约束下的最短路”"
+        "给出；它与 Dijkstra/A* 的逐站台扩展不同源、不同口径，只用于了解搜索规模，"
+        "不参与横向大小比较。"
     )
     doc.p(
         "表 4-3 对应的扩展节点数对比可以更直观地看出 A* 的剪枝效果，如图 4-4 所示。"
@@ -1023,7 +1043,8 @@ def build_report() -> Path:
         f"{max_drop[3]}（少 {(1 - max_drop[3] / max_drop[2]) * 100:.1f}%，{max_drop[1]}），"
         f"最少从 {min_drop[2]} 降到 {min_drop[3]}"
         f"（少 {(1 - min_drop[3] / min_drop[2]) * 100:.1f}%，{min_drop[1]}）。"
-        "这说明直线距离启发函数既保持了最优性，又显著缩小了搜索空间。",
+        "这说明直线距离启发函数既保持了最优性，又显著缩小了搜索空间；"
+        "这里的“扩展最少”只针对 Dijkstra/A* 两种逐站台算法，BFS 的线路扩展口径不计入比较。",
         indent=True,
     )
     doc.p(
@@ -1104,14 +1125,18 @@ def build_report() -> Path:
 
     doc.h2("三算法在效率、公平与可解释性上的差异")
     doc.p(
-        "效率上，Dijkstra 扩展最多但最稳；A* 用直线距离做启发，搜索规模平均少 42.3%，"
-        "且因为启发函数可采纳，结果仍是最优；BFS 按线路扩展，扩展计数最少，但每次扩展要"
-        "扫一条线，实际耗时不一定最低（实测中位数 0.33 ms，略高于 Dijkstra 的 0.27 ms）。"
+        "效率上，Dijkstra 扩展最多但最稳；A* 用直线距离做启发，在两种逐站台算法中搜索规模"
+        "平均少 42.3%，且因为启发函数可采纳，结果仍是最优；BFS 按线路扩展，扩展计数口径"
+        "不同（一条线一次），但每次扩展要扫一条线，实际耗时不一定最低（实测中位数 0.33 ms，"
+        "略高于 Dijkstra 的 0.27 ms）。"
     )
     doc.p(
         "公平上，Dijkstra/A* 优化“总时间”，BFS 优化“换乘次数”，两者没有绝对优劣。"
         f"慈寿寺→崇文门的例子说明少换乘可能多花 {alt_case.total_time - fast_case.total_time:.1f} "
         "分钟；报告里不能简单说“BFS 更差”，而要说“准则不同、用户按偏好选择”。"
+        "同样，“最快”与“最短里程”也是两种准则：S001→S061 最快 79.6 min / 33.24 km，"
+        "而最短里程为 82.3 min / 33.22 km——任务书 P01 要求的距离/时间双权重正是为了"
+        "表达这种取舍。"
     )
     doc.p(
         "可解释性上，Dijkstra 的“按代价从小到大扩展”最好讲；A* 需要额外解释启发函数不高估"
@@ -1181,8 +1206,8 @@ def build_report() -> Path:
         "输出格式：目前是静态 PNG/PS 快照，后续可支持导出 SVG、批量生成多组对比图。"
     )
     doc.bullet(
-        "多准则：算法只支持“时间最短”和“换乘最少”两种准则，后续可加入“步行最少”"
-        "“票价最低”等多权重，甚至做 Pareto 前沿。"
+        "多准则：算法已支持“时间最短”“里程最短”两种权重与“换乘最少”，也支持线路级"
+        "速度差异；后续可继续加入“步行最少”“票价最低”等权重，并做 Pareto 前沿分析。"
     )
     doc.bullet(
         "算法可视化：当前动画是“搜索结果回放”，不是真正的算法过程可视化；如果要展示堆"
@@ -1296,7 +1321,8 @@ def build_report() -> Path:
         "[PASS] 03. Dijkstra 路径自洽（独立重算）  (算法, 2 ms)\n"
         "        32 站 / 79.6 min / 33.2 km / 换乘 1 / 扩展 151\n"
         "[PASS] 04. A* 与 Dijkstra 同优且扩展更少  (算法, 3 ms)\n"
-        "        同优 68.6 min；扩展 A*=78 / Dijkstra=143（省 65 个）\n"
+        "        同优 68.6 min；扩展 A*=78 / Dijkstra=143（省 65 个）；"
+        "距离权重同为 28.605 km（时间最优 28.605 km）\n"
         "[PASS] 05. BFS 换乘次数最少  (算法, 4 ms)\n"
         "        BFS 换乘 1 次 / 79.6 min；Dijkstra 换乘 1 次 / 79.6 min\n"
         "[PASS] 06. 边界：起终点相同  (边界, 2 ms)\n"

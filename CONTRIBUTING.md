@@ -16,7 +16,7 @@ git switch -c feat/p4-canvas               # 开自己的分支（命名见 §2�
 # ……改代码……
 python main.py --check                     # 必须 10/10 绿
 python selfcheck.py --mutation-demo        # 必须 3 个 [CAUGHT]
-python -m unittest discover -s tests -v    # 接口回归：35 个用例必须全过
+python -m unittest discover -s tests -v    # 接口回归：55 个用例必须全过
 git add -A
 git commit -m "feat: 画布支持 4 倍速回放"
 git push -u origin feat/p4-canvas          # 首次推这个分支
@@ -168,7 +168,7 @@ python main.py --check --no-gui            # 跳过第 10 项 GUI，前 9 项必
 另外：
 
 - 改了界面/画布/导出：附 1~2 张新截图到 PR（用 `python tools/export_canvas.py` 或 `python main.py --smoke _smoke/xx.png`）；
-- 改了算法/数据：附 `python tools/bench.py` 复跑后的 `docs/bench.csv` 对比，报告数字要同步；
+- 改了算法/数据：用 `python tools/bench.py --update-docs` 复跑后再对比 `docs/bench.csv`，报告数字要同步；
 - **不许**为了让闸门变绿而删除/放宽自检断言；发现断言本身错了，先开 Issue 说明理由，由 P4 修改并补 mutation 用例。
 
 ---

@@ -2,9 +2,18 @@
 
 用法
 ----
-    python tools/bench.py                 # 跑实验，写 CSV、Markdown、图 4-4
-    python tools/bench.py --runs 9        # 每项重复 9 次取中位数
-    python tools/bench.py --no-chart      # 只出表，不画图
+    python tools/bench.py                       # 默认只写 _smoke/，不碰入库产物
+    python tools/bench.py --update-docs         # 明确要求时才更新 docs/bench.csv 与图 4-4
+    python tools/bench.py --runs 9              # 每项重复 9 次取中位数
+    python tools/bench.py --no-chart            # 只出表，不画图
+
+为什么默认写 `_smoke/`？
+----------------------
+复跑 bench 会改变计时中位数（`docs/bench.csv` 里的 elapsed_ms 每次都不完全
+一样），而报告表 4-3 与 `tools/check_report.py` 都以 `docs/bench.csv` 为准。
+如果默认就覆盖入库文件，任何人跑一次实验都会让报告闸门变红（外部评审 M4）。
+因此默认输出到 `_smoke/`（已被 .gitignore 忽略）；只有显式加 `--update-docs`
+才更新 `docs/`，此时应同步重新生成报告。
 
 为什么用 Pillow 画图？
 --------------------
@@ -16,6 +25,7 @@
 ----
 * 每个 (起终点, 算法) 先热身跑 1 次，再计时 5 次取**中位数**，避免偶发卡顿；
 * 结果里的 expanded 是 P2 的扩展站台数，直接反映搜索规模；
+* BFS 的 expanded 是“线路扩展帧”，与 Dijkstra/A* 的逐站台口径不同，不横比；
 * 时间是算法内部 ``perf_counter()`` 的毫秒数，不含界面绘制。
 """
 
@@ -37,6 +47,7 @@ from core import load_dataset, solve  # noqa: E402
 DATA = PROJECT_ROOT / "data" / "beijing_metro.json"
 DOCS = PROJECT_ROOT / "docs"
 FIG_DIR = DOCS / "figures"
+SMOKE = PROJECT_ROOT / "_smoke"
 
 PAIRS = [
     ("S001", "S061"),
@@ -126,7 +137,8 @@ def summaries(rows: list[dict]) -> list[str]:
         lines.append(
             "扩展节点均值："
             + "，".join(f"{name} {avg_expanded[name]:.1f}" for name in ALGORITHMS)
-            + "。A* 借助直线距离启发函数，平均搜索规模最小。"
+            + "。A* 借助直线距离启发函数，在 Dijkstra/A* 两种“逐站台”算法中扩展最少；"
+            "BFS 的数字是“线路扩展帧”，口径不同，不参与横比（详见报告 4.6 节）。"
         )
         lines.append(
             "单次寻路耗时中位数均值："
@@ -260,13 +272,24 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="P4 对比实验")
     parser.add_argument("--runs", type=int, default=5, help="每个组合计时次数（中位数）")
     parser.add_argument("--no-chart", action="store_true", help="不画柱状图")
+    parser.add_argument(
+        "--update-docs", action="store_true",
+        help="更新 docs/bench.csv、docs/bench.md 与图 4-4（默认只写 _smoke/）",
+    )
     args = parser.parse_args(argv)
 
     rows = run_benchmark(args.runs)
-    csv_path = DOCS / "bench.csv"
+    if args.update_docs:
+        out_dir, fig_dir = DOCS, FIG_DIR
+        print("[bench] 注意：--update-docs 会更新入库产物，请同步重新生成报告并跑 check_report")
+    else:
+        out_dir, fig_dir = SMOKE, SMOKE
+        print("[bench] 默认只写 _smoke/，不修改 docs/；需要更新报告数据时加 --update-docs")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = out_dir / "bench.csv"
     write_csv(rows, csv_path)
     table = markdown_table(rows)
-    (DOCS / "bench.md").write_text(
+    (out_dir / "bench.md").write_text(
         "# 对比实验原始表\n\n" + table + "\n\n" + "\n".join(f"- {line}" for line in summaries(rows)) + "\n",
         encoding="utf-8",
     )
@@ -278,7 +301,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nCSV：{csv_path}")
 
     if not args.no_chart:
-        chart_path = FIG_DIR / "fig4-4_expanded.png"
+        chart_path = fig_dir / "fig4-4_expanded.png"
         draw_chart(rows, chart_path)
         print(f"图 4-4：{chart_path}")
     return 0

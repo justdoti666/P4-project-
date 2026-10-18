@@ -28,6 +28,7 @@ nav = connect()                                        # 默认 data/beijing_met
 print(nav.info())                                      # 134 站 / 7 线 / 154 站台节点…
 print(nav.route("苹果园", "天通苑北")["summary"])        # 站名或站 ID 都行
 print(nav.route("S001", "S061", algorithm="A*")["summary"])
+print(nav.route("苹果园", "天通苑北", weight="distance")["summary"])  # 里程最短（多准则）
 print(nav.compare("慈寿寺", "崇文门")["highlights"])     # 三算法差异摘要
 
 # 自己指定数据文件（.json / .txt 都支持）
@@ -40,6 +41,7 @@ demo = connect("data/demo_city.json")
 python metro_api.py info
 python metro_api.py route --start 苹果园 --end 天通苑北
 python metro_api.py route --start S001 --end S061 --algorithm A* --json
+python metro_api.py route --start S001 --end S061 --weight distance --json
 python metro_api.py compare --start S001 --end S061
 python metro_api.py stations --line L1 --query 门
 python metro_api.py export --output _smoke/network.json
@@ -55,6 +57,7 @@ python tools/serve_api.py --port 8765       # 或 python metro_api.py serve --po
 ```powershell
 # PowerShell
 Invoke-RestMethod "http://127.0.0.1:8765/api/route?start=S001&end=S061"
+Invoke-RestMethod "http://127.0.0.1:8765/api/route?start=S001&end=S061&weight=distance"
 
 # curl（中文站名记得 URL 编码）
 curl "http://127.0.0.1:8765/api/route?start=%E8%8B%B9%E6%9E%9C%E5%9B%AD&end=%E5%A4%A9%E9%80%9A%E8%8B%91%E5%8C%97"
@@ -86,8 +89,8 @@ console.log(data.summary.time_min, data.summary.transfers);
 | `lines()` | list[dict] | 线路列表（颜色、是否环线、站序） |
 | `station(key)` | dict | 单站详情（`is_transfer` 标记换乘站） |
 | `resolve_station(key)` | str | 站 ID 或站名 → 站 ID；找不到抛 `StationNotFound` |
-| `route(start, end, *, algorithm="Dijkstra")` | dict | 求路径；**无路径不是异常**，返回 `found=false` |
-| `compare(start, end)` | dict | 三种算法同跑 + 差异摘要 |
+| `route(start, end, *, algorithm="Dijkstra", weight="time")` | dict | 求路径；`weight=time`（默认，最快）/ `distance`（最短里程）；**无路径不是异常**，返回 `found=false` |
+| `compare(start, end, *, weight="time")` | dict | 三种算法同跑 + 差异摘要；`weight` 同上 |
 | `export_network(path)` | str | 导出「规模 + 站点 + 线路」JSON，给前端/其他服务用 |
 | `city` / `data_path` / `algorithms` | str / str / list | 只读属性 |
 
@@ -97,6 +100,7 @@ console.log(data.summary.time_min, data.summary.transfers);
 {
   "ok": true,
   "algorithm": "Dijkstra",
+  "weight": "time",
   "found": true,
   "start": {"id": "S001", "name": "苹果园"},
   "end": {"id": "S061", "name": "天通苑北"},
@@ -127,8 +131,10 @@ console.log(data.summary.time_min, data.summary.transfers);
 
 字段口径：
 
+* `weight` 为优化目标：`time`（默认，最快）或 `distance`（里程最短）；两者允许给出
+  不同的最优路径（例如 S001→S061：最快 79.6 min / 33.24 km，最短里程 82.3 min / 33.22 km）；
 * `summary.time_min` = 乘车时间 + 换乘时间；`distance_km` 只累加乘车段；
-* `expanded` 为扩展站台节点数（BFS 按线路口径，与 Dijkstra/A* 不同，不要横比，见报告 4.6）；
+* `expanded` 为扩展站台节点数（BFS 是“线路扩展帧”，与 Dijkstra/A* 不同源、不要横比，见报告 4.6）；
 * `elapsed_ms` 由 P2 内部计时，`wall_ms` 为接口层整体计时，两者相差调度噪声；
 * `legs[].kind` = `ride`（乘车）或 `transfer`（换乘）；每段首尾相接，可直接画路径。
 
@@ -158,8 +164,8 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
 | `info` | 路网规模 | `--json` |
 | `stations` | 站点列表/搜索 | `--line L1`、`--query 门`、`--json` |
 | `lines` | 线路列表 | `--json` |
-| `route` | 求路径 | `--start`、`--end`、`--algorithm`、`--json` |
-| `compare` | 三算法对比 | `--start`、`--end`、`--json` |
+| `route` | 求路径 | `--start`、`--end`、`--algorithm`、`--weight`、`--json` |
+| `compare` | 三算法对比 | `--start`、`--end`、`--weight`、`--json` |
 | `export` | 导出路网 JSON | `--output` |
 | `serve` | 起 HTTP 服务 | `--host`、`--port`、`--quiet` |
 
@@ -181,9 +187,9 @@ python main.py --cli <子命令> [选项]        # 等价入口（转发给 metr
 | GET | `/api/stations?line=L1&query=门` | 站点列表/搜索 |
 | GET | `/api/lines` | 线路列表 |
 | GET | `/api/station?q=苹果园` | 单站详情（也接受 `?id=`/`?name=`） |
-| GET | `/api/route?start=..&end=..&algorithm=Dijkstra` | 寻路 |
-| POST | `/api/route` | 寻路，JSON body `{"start":..,"end":..,"algorithm":..}` |
-| GET | `/api/compare?start=..&end=..` | 三算法对比 |
+| GET | `/api/route?start=..&end=..&algorithm=Dijkstra&weight=time` | 寻路（`weight=time/distance`） |
+| POST | `/api/route` | 寻路，JSON body `{"start":..,"end":..,"algorithm":..,"weight":..}` |
+| GET | `/api/compare?start=..&end=..&weight=time` | 三算法对比（`weight` 同上） |
 | OPTIONS | 任意 | CORS 预检（`Access-Control-Allow-Origin: *`） |
 
 约定：
@@ -231,7 +237,7 @@ except MetroAPIError as exc:
 ## 6. 测试与 CI
 
 ```powershell
-python -m unittest discover -s tests -v     # 35 个用例，约 2.6 s
+python -m unittest discover -s tests -v     # 55 个用例，约 2.6 s
 ```
 
 覆盖：数据加载与规模、站名/ID 解析、已知 OD 的期望值（79.575299 min / 151 扩展）、
@@ -275,13 +281,14 @@ URL 里中文必须百分号编码（浏览器/`Invoke-RestMethod`/`requests` �
 
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
-| 1.0.0 | 2026-10-18 | 首版：Python SDK（`connect`/`MetroNavigator`）、CLI 7 个子命令、HTTP 9 个端点、35 个 unittest、本说明 |
+| 1.0.0 | 2026-10-18 | 首版：Python SDK（`connect`/`MetroNavigator`）、CLI 7 个子命令、HTTP 9 个端点、本说明 |
+| 1.1.0 | 2026-10-18 | 新增 `weight=time/distance` 多准则（SDK/CLI/HTTP 全链路）；数据支持 per-line `speed_kmh`；画布兼容 P2 的 `sid`/`events` 写法；测试增至 55 个 |
 
 ## 附：与任务书的对应关系
 
 | 任务书要求 | 本接口的落实 |
 | --- | --- |
 | P4 渲染与工程化「给全班可复用的组件」 | `CanvasView` 之外再提供**无界面调用层**，P3 之外的脚本/前端也能用 |
-| 质量门「新功能有新断言」 | `tests/test_api.py` 35 个用例；CI 独立执行 |
+| 质量门「新功能有新断言」 | `tests/test_api.py` 55 个用例；CI 独立执行 |
 | 质量门「UI 改动附截图」 | 本接口不改 UI；HTTP 服务用浏览器/curl 可直接演示 |
 | 零第三方依赖 | 仅标准库；`http.server` 提供 REST |
